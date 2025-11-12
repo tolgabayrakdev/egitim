@@ -4,6 +4,8 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import "dotenv/config";
 
+import authRoutes from "./routes/auth-routes.js";
+
 import errorHandler from "./middleware/error-handler.js";
 import { apiLimiter } from "./middleware/rate-limiter.js";
 import requestTimeout from "./middleware/timeout.js";
@@ -23,9 +25,8 @@ app.use(requestTimeout);
 app.use(apiLimiter);
 
 
-// Rotalar
 
-
+app.use("/api/auth", authRoutes);
 
 
 
