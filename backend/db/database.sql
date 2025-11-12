@@ -20,6 +20,17 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT now()
 );
 
+CREATE TABLE invitations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    invited_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- davet eden (professional)
+    email VARCHAR(255) NOT NULL,                                    -- davet edilen e-posta
+    token VARCHAR(255) UNIQUE NOT NULL,                             -- doğrulama token
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired')),
+    expires_at TIMESTAMP NOT NULL DEFAULT (now() + interval '7 days'),
+    created_at TIMESTAMP DEFAULT now()
+);
+
+
 -- 2. Programlar / Dersler
 CREATE TABLE programs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
