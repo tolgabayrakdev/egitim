@@ -11,23 +11,342 @@ import { sendEmail } from "../util/send-email.js";
 
 export default class AuthService {
 
-    async login(email, password) { }
+    async login(email, password) {
+        const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+        const user = result.rows[0];
 
-    async register(user) { }
+        if (!user) {
+            throw new HttpException(404, "Kullanıcı bulunamadı!");
+        }
 
-    async verifyEmail(token) { }
+        // Ban kontrolü
+        if (user.is_banned === true) {
+            throw new HttpException(403, "Hesabınız kapatılmıştır.");
+        }
 
-    async resendVerificationEmail(email) { }
+        const isPasswordValid = await comparePassword(password, user.password);
+        if (!isPasswordValid) {
+            throw new HttpException(401, "Sifre yanlış!");
+        }
+        // Backward compatibility: prefer new column if exists; fall back to is_verified
+        const isEmailVerified = user.is_email_verified ?? user.is_verified;
+        if (!isEmailVerified) {
+            throw new HttpException(403, "Lütfen e-postanızı doğrulayın.");
+        }
 
-    async changePassword(id, currentPassword, newPassword) { }
+        // If SMS verification required and not yet verified, send OTP and return 202-style payload
+        if (user.is_sms_verified === false) {
+            const code = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
+            const createdAt = new Date();
 
-    async deleteAccount(id) { }
+            await pool.query(
+                `UPDATE users SET sms_verify_code = $1, sms_verify_code_created_at = $2 WHERE id = $3`,
+                [code, createdAt, user.id]
+            );
 
-    async forgotPassword(email) { }
+            // Send SMS (best-effort; if SMS fails, surface error)
+            const phoneNumber = user.phone;
+            if (!phoneNumber) {
+                throw new HttpException(400, "SMS doğrulaması için kayıtlı bir telefon numarası bulunamadı.");
+            }
+            await sendSms({ msg: `RandevuHazır doğrulama kodunuz: ${code}. Kod 3 dakika geçerlidir.`, no: phoneNumber });
 
-    async verifyResetToken(token) { }
+            const maskedPhone = phoneNumber.replace(/(\+?\d{0,3})?(\d{2})(\d+)(\d{2})$/, (_m, cc = "", p2, mid, p4) => {
+                return `${cc || ""}${p2}${"*".repeat(mid.length)}${p4}`;
+            });
 
-    async resetPassword(token, newPassword) { }
+            return { smsRequired: true, email: user.email, maskedPhone };
+        }
+
+        const accessToken = generateAccessToken({ id: user.id, role: "user" });
+        const refreshToken = generateRefreshToken({ id: user.id, role: "user" });
+        return { accessToken, refreshToken };
+    }
+
+    async register(user) {
+        const client = await pool.connect();
+        try {
+            await client.query("BEGIN");
+
+            const existingUser = await client.query("SELECT * FROM users WHERE email = $1", [
+                user.email,
+            ]);
+
+            if (existingUser.rows.length > 0) {
+                throw new HttpException(409, "Bu e-posta adresi zaten kullanılıyor.");
+            }
+
+            const existingPhone = await client.query("SELECT * FROM users WHERE phone = $1", [
+                user.phone,
+            ]);
+
+            if (existingPhone.rows.length > 0) {
+                throw new HttpException(409, "Bu telefon numarası zaten kayıtlı.");
+            }
+
+            const hashedPassword = await hashPassword(user.password);
+            const emailVerifyToken = crypto.randomBytes(32).toString("hex");
+            const tokenCreatedAt = new Date();
+
+            const newUser = await client.query(
+                `
+                INSERT INTO users(
+                    email,
+                    password,
+                    first_name,
+                    last_name,
+                    phone,
+                    email_verify_token,
+                    email_verify_token_created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING id
+                `,
+                [
+                    user.email,
+                    hashedPassword,
+                    user.first_name,
+                    user.last_name,
+                    user.phone,
+                    emailVerifyToken,
+                    tokenCreatedAt
+                ]
+            );
+            await client.query("COMMIT");
+
+            const verifyUrl = `https://${process.env.HOST}/verify-email?token=${emailVerifyToken}`;
+            await sendEmail(
+                user.email,
+                "Edivora Hesabınızı Onaylayın",
+                `<p>Merhaba ${user.first_name},</p>
+                <p>Lütfen e-postanızı onaylamak için <a href="${verifyUrl}">buraya tıklayın</a>.</p>`
+            );
+            return newUser.rows[0].id;
+        } catch (error) {
+            await client.query("ROLLBACK");
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async verifyEmail(token) {
+
+        const result = await pool.query(
+            `
+            SELECT email_verify_token_created_at FROM users WHERE email_verify_token = $1
+            `,
+            [token]
+        );
+
+        if (result.rows.length === 0) {
+            throw new HttpException(400, "Token geçersiz veya süresi dolmuş");
+        }
+
+        const tokenCreatedAt = result.rows[0].email_verify_token_created_at;
+        const now = new Date();
+        const diffMs = now - tokenCreatedAt;
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        if (diffHours > 1) {
+            throw new HttpException(400, "Token süresi doldu. Lütfen tekrar kayıt olun");
+        }
+
+        await pool.query(
+            `
+            UPDATE users 
+            SET is_email_verified = true, is_verified = true, email_verify_token = NULL, email_verify_token_created_at = NULL
+            WHERE email_verify_token = $1
+            `,
+            [token]
+        );
+
+        return { message: "E-posta başarıyla doğrulandı" };
+
+
+    }
+
+    async resendVerificationEmail(email) {
+        const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+        const user = result.rows[0];
+
+        if (!user) {
+            throw new HttpException(404, "Kullanıcı bulunamadı!");
+        }
+
+        // Backward compatibility: check both columns
+        const isEmailVerified = user.is_email_verified ?? user.is_verified;
+        if (isEmailVerified) {
+            throw new HttpException(400, "E-posta zaten doğrulanmış");
+        }
+
+        const now = new Date();
+
+        if (user.email_verify_token_created_at) {
+            const diffMs = now - new Date(user.email_verify_token_created_at);
+            const diffMinutes = diffMs / (1000 * 60);
+
+            // ✅ 1. Token hâlâ geçerliyse (1 saat içinde)
+            if (diffMinutes < 60) {
+                // ✅ 2. Son gönderim üzerinden 2 dakika geçmedi ise
+                if (diffMinutes < 2) {
+                    throw new HttpException(
+                        429,
+                        "Yeni bir doğrulama e-postası istemeden önce lütfen birkaç dakika bekleyin."
+                    );
+                }
+                const verifyUrl = `https://${process.env.HOST}/verify-email?token=${user.email_verify_token}`;
+                await sendEmail(
+                    user.email,
+                    "Edivora Hesabınızı Onaylayın",
+                    `<p>Merhaba ${user.first_name},</p>
+                    <p>Lütfen e-postanızı onaylamak için <a href="${verifyUrl}">buraya tıklayın</a>.</p>`
+                );
+                return { message: "Yeni bir doğrulama e-postası gönderildi." };
+            }
+        }
+        const newToken = crypto.randomBytes(32).toString("hex");
+        const newCreatedAt = new Date();
+
+        await pool.query(
+            `
+            UPDATE users 
+            SET email_verify_token = $1, email_verify_token_created_at = $2
+            WHERE email = $3
+        `,
+            [newToken, newCreatedAt, email]
+        );
+
+        const verifyUrl = `https://${process.env.HOST}/verify-email?token=${newToken}`;
+        await sendEmail(
+            user.email,
+            "Edivora Hesabınızı Onaylayın",
+            `<p>Merhaba ${user.first_name},</p>
+            <p>Lütfen e-postanızı onaylamak için <a href="${verifyUrl}">buraya tıklayın</a>.</p>`
+        );
+
+        return { message: "Yeni bir doğrulama e-postası gönderildi." };
+    }
+
+    async changePassword(id, currentPassword, newPassword) {
+        const user = await pool.query("SELECT password FROM users WHERE id = $1", [id]);
+        const isPasswordMatch = await comparePassword(currentPassword, user.rows[0].password);
+        if (!isPasswordMatch) {
+            throw new HttpException(400, "Mevcut şifre yanlış");
+        }
+        const hashedPassword = await hashPassword(newPassword);
+        await pool.query("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, id]);
+        return { message: "Parola başarıyla değiştirildi" };
+    }
+
+    async deleteAccount(id) {
+        const client = await pool.connect();
+        try {
+            await client.query("BEGIN");
+
+            await client.query("DELETE FROM users WHERE id = $1", [id]);
+
+            await client.query("COMMIT");
+
+            return { message: "Hesabınız ve ilişkili tüm veriler başarıyla silindi." };
+        } catch (error) {
+            await client.query("ROLLBACK");
+            throw new HttpException(500, "Hesap silme işlemi sırasında bir hata oluştu.");
+        } finally {
+            client.release();
+        }
+    }
+
+    async forgotPassword(email) {
+        const client = await pool.connect();
+        try {
+            const userResult = await client.query("SELECT id FROM users WHERE email = $1", [email]);
+
+            // Bilinmeyen kullanıcıya sabit cevap döndür
+            if (userResult.rowCount === 0) {
+                return {
+                    message: "Parola sıfırlama e-postası gönderildi (varsa e-posta adresiniz)",
+                };
+            }
+
+            const userId = userResult.rows[0].id;
+
+            const token = randomUUID();
+            const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 dakika
+
+            await client.query(
+                "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)",
+                [userId, token, expiresAt]
+            );
+            const resetLink = `https://${process.env.HOST}/reset-password?token=${token}`;
+
+            await sendEmail(
+                email,
+                "Edivora Parola Sıfırlama",
+                `<p>Merhaba,</p>
+                <p>Parolanızı sıfırlamak için <a href="${resetLink}">buraya tıklayın</a>.</p>`
+            );
+
+            return { message: "Parola sıfırlama e-postası gönderildi." };
+        } finally {
+            client.release();
+        }
+    }
+
+    async verifyResetToken(token) {
+        const result = await pool.query(
+            "SELECT * FROM password_reset_tokens WHERE token = $1",
+            [token]
+        );
+
+        if (result.rowCount === 0) {
+            throw new HttpException(400, "Geçersiz veya süresi dolmuş token");
+        }
+
+        const resetToken = result.rows[0];
+        const now = new Date();
+        const expiresAt = new Date(resetToken.expires_at);
+
+        if (now > expiresAt) {
+            throw new HttpException(400, "Token süresi dolmuş");
+        }
+
+        return { valid: true, message: "Token geçerli" };
+    }
+
+    async resetPassword(token, newPassword) {
+        const client = await pool.connect();
+        try {
+            const tokenResult = await client.query(
+                "SELECT * FROM password_reset_tokens WHERE token = $1",
+                [token]
+            );
+
+            if (tokenResult.rowCount === 0) {
+                throw new HttpException(400, "Geçersiz veya süresi dolmuş token");
+            }
+
+            const resetToken = tokenResult.rows[0];
+            const now = new Date();
+            const expiresAt = new Date(resetToken.expires_at);
+
+            if (now > expiresAt) {
+                throw new HttpException(400, "Token süresi dolmuş");
+            }
+
+            const hashedPassword = await hashPassword(newPassword);
+
+            await client.query("UPDATE users SET password = $1 WHERE id = $2", [
+                hashedPassword,
+                resetToken.user_id,
+            ]);
+
+            await client.query("DELETE FROM password_reset_tokens WHERE token = $1", [token]);
+
+            return { message: "Parola sıfırlama başarılı" };
+        } finally {
+            client.release();
+        }
+    }
 
     async updateUser(id, user) {
         try {
@@ -39,7 +358,17 @@ export default class AuthService {
 
     async verifyUser(token) {
         try {
+            const payload = verifyToken(token);
+            const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [
+                payload.id,
+            ]);
 
+            if (userResult.rowCount === 0) {
+                throw new HttpException(404, "Kullanıcı bulunamadı");
+            }
+
+            const user = userResult.rows[0];
+            return user;
         } catch (error) {
             if (error instanceof HttpException) throw error;
             throw new HttpException(500, error.message || "Kullanıcı doğrulanırken hata oluştu");

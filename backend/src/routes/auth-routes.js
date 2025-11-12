@@ -15,7 +15,7 @@ router.post("/logout", verifyToken, authController.logout.bind(authController));
 router.get("/verify-email", authController.verifyEmail.bind(authController));
 router.post(
     "/resend-verification-email",
-    authController.resendVerificationEmail.bind(authController)
+    authController.resendVerificationEmail.bind(authController);
 );
 router.post("/change-password", verifyToken, authController.changePassword.bind(authController));
 router.put("/update-user", verifyToken, authController.updateUser.bind(authController));
