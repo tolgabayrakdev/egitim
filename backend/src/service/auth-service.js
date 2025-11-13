@@ -349,8 +349,73 @@ export default class AuthService {
 
     async updateUser(id, user) {
         try {
+            const client = await pool.connect();
+            try {
+                await client.query("BEGIN");
 
+                // Mevcut kullanıcıyı kontrol et
+                const existingUser = await client.query("SELECT * FROM users WHERE id = $1", [id]);
+                if (existingUser.rows.length === 0) {
+                    throw new HttpException(404, "Kullanıcı bulunamadı");
+                }
+
+                // Email ve telefon güncellenemez - sabit kalmalı
+                if (user.email !== undefined || user.phone !== undefined) {
+                    throw new HttpException(400, "E-posta ve telefon numarası değiştirilemez");
+                }
+
+                // Güncellenecek alanları belirle (sadece first_name, last_name, bio, specialty)
+                const updateFields = [];
+                const updateValues = [];
+                let paramIndex = 1;
+
+                if (user.first_name !== undefined) {
+                    updateFields.push(`first_name = $${paramIndex++}`);
+                    updateValues.push(user.first_name);
+                }
+                if (user.last_name !== undefined) {
+                    updateFields.push(`last_name = $${paramIndex++}`);
+                    updateValues.push(user.last_name);
+                }
+                if (user.bio !== undefined) {
+                    updateFields.push(`bio = $${paramIndex++}`);
+                    updateValues.push(user.bio);
+                }
+                if (user.specialty !== undefined) {
+                    updateFields.push(`specialty = $${paramIndex++}`);
+                    updateValues.push(user.specialty);
+                }
+
+                if (updateFields.length === 0) {
+                    throw new HttpException(400, "Güncellenecek alan bulunamadı");
+                }
+
+                // updated_at ekle
+                updateFields.push(`updated_at = $${paramIndex++}`);
+                updateValues.push(new Date());
+
+                // ID'yi ekle
+                updateValues.push(id);
+
+                const query = `
+                    UPDATE users 
+                    SET ${updateFields.join(", ")}
+                    WHERE id = $${paramIndex}
+                    RETURNING id, first_name, last_name, email, phone, bio, specialty, role, created_at, updated_at
+                `;
+
+                const result = await client.query(query, updateValues);
+                await client.query("COMMIT");
+
+                return result.rows[0];
+            } catch (error) {
+                await client.query("ROLLBACK");
+                throw error;
+            } finally {
+                client.release();
+            }
         } catch (error) {
+            if (error instanceof HttpException) throw error;
             throw new HttpException(500, error.message);
         }
     }

@@ -169,8 +169,8 @@ export default class AuthController {
     async updateUser(req, res, next) {
         try {
             const id = req.user.id;
-            const { first_name, last_name, email, phone } = req.body;
-            const result = await this.authService.updateUser(id, { first_name, last_name, email, phone });
+            const { first_name, last_name, email, phone, bio, specialty } = req.body;
+            const result = await this.authService.updateUser(id, { first_name, last_name, email, phone, bio, specialty });
             res.status(200).json({
                 success: true,
                 message: "Kullanıcı bilgileri güncellendi",
