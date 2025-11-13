@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router"
-import { Calendar, Home, Inbox, Search, Settings, User2, LogOut } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, User2, LogOut, Bell } from "lucide-react"
 
 import {
   Sidebar,
@@ -46,12 +46,7 @@ const items = [
     title: "Ara",
     url: "/search",
     icon: Search,
-  },
-  {
-    title: "Ayarlar",
-    url: "/dashboard/settings",
-    icon: Settings,
-  },
+  }
 ]
 
 interface UserResponse {
@@ -187,9 +182,15 @@ export function AppSidebar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard/settings" className="flex items-center gap-2">
+                    <Link to="/dashboard/settings/account" className="flex items-center gap-2">
                       <Settings className="h-4 w-4" />
-                      Ayarlar
+                      Hesap Ayarları
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard/settings/notifications" className="flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      Bildirim Ayarları
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
