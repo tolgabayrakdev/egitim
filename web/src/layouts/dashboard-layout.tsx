@@ -9,15 +9,16 @@ export default function DashboardLayout() {
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
-                    <div className="flex items-center gap-4 p-1">
+                    <div className="flex items-center justify-between p-1">
                         <SidebarTrigger />
-                        <div className="flex-1 w-full overflow-y-auto pr-8">
+                    </div>
+                    <div className="flex-1 w-full overflow-y-auto pl-8 pr-8">
+                        <div className="max-w-4xl mx-auto">
                             <Outlet />
                         </div>
                     </div>
                 </SidebarInset>
             </SidebarProvider>
         </AuthProvider>
-
     )
 }
