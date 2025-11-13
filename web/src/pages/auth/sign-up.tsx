@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { apiUrl } from "@/lib/api";
 
 export default function SignUp() {
     const [formData, setFormData] = useState({
@@ -70,7 +71,7 @@ export default function SignUp() {
                 ...(formData.role === "professional" && { specialty: formData.specialty }),
             };
 
-            const response = await fetch("http://localhost:1234/api/auth/register", {
+            const response = await fetch(apiUrl("api/auth/register"), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

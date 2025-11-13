@@ -34,7 +34,7 @@ export default class AuthController {
 
     async register(req, res, next) {
         try {
-            const { first_name, last_name, email, phone, password } = req.body;
+            const { first_name, last_name, email, phone, password, role, specialty } = req.body;
 
             const result = await this.authService.register({
                 first_name,
@@ -42,6 +42,8 @@ export default class AuthController {
                 email,
                 phone,
                 password,
+                role: role || 'participant',
+                specialty: specialty || null,
             });
             res.status(201).json({
                 success: true,

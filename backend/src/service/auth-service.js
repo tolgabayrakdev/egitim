@@ -96,9 +96,11 @@ export default class AuthService {
                     first_name,
                     last_name,
                     phone,
+                    role,
+                    specialty,
                     email_verify_token,
                     email_verify_token_created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 RETURNING id
                 `,
                 [
@@ -107,6 +109,8 @@ export default class AuthService {
                     user.first_name,
                     user.last_name,
                     user.phone,
+                    user.role || 'participant',
+                    user.specialty || null,
                     emailVerifyToken,
                     tokenCreatedAt
                 ]

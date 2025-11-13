@@ -4,6 +4,7 @@ import DashboardIndex from "@/pages/dashboard/index"
 import SignIn from "@/pages/auth/sign-in"
 import SignUp from "@/pages/auth/sign-up"
 import ForgotPassword from "@/pages/auth/forgot-password"
+import Settings from "@/pages/dashboard/settings"
 
 export const router = createBrowserRouter([
     {
@@ -14,6 +15,10 @@ export const router = createBrowserRouter([
                 index: true,
                 element: <DashboardIndex />
             },
+            {
+                path: '/dashboard/settings',
+                element: <Settings />
+            }
         ]
 
     },
