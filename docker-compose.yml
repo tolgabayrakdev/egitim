@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  postgres2:
+    image: postgres:latest
+    container_name: egitim
+    environment:
+      POSTGRES_USER: root5
+      POSTGRES_PASSWORD: root5
+      POSTGRES_DB: db5
+    ports:
+      - "5435:5432"  # 5434 portu ile
