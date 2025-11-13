@@ -81,8 +81,14 @@ export function AppSidebar() {
         })
 
         if (response.ok) {
-          const data = await response.json()
-          setUser(data)
+          const contentType = response.headers.get("content-type")
+          if (contentType && contentType.includes("application/json")) {
+            const data = await response.json()
+            setUser(data)
+          } else {
+            // Response is not JSON, likely HTML error page
+            setUser(null)
+          }
         } else {
           setUser(null)
         }
@@ -116,7 +122,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <div className="flex items-center justify-between px-3 py-2">
             <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Menü
+              Edivora
             </SidebarGroupLabel>
             <ModeToggle />
           </div>

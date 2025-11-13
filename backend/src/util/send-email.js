@@ -20,9 +20,6 @@ export async function sendEmail(to, subject, html) {
             <p style="margin: 5px 0;">
                 <strong>🔒 Güvenlik Notu:</strong> Bu e-posta <strong>www.edivora.com</strong> tarafından gönderilmiştir.
             </p>
-            <p style="margin: 5px 0; font-size: 11px; color: #999;">
-                Bu e-postayı beklemiyorsanız, lütfen dikkate almayın.
-            </p>
         </div>
     `;
 

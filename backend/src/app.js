@@ -19,7 +19,7 @@ const port = process.env.PORT || 1234;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
-app.use(morgan("dev"));
+app.use(morgan("tiny"));
 app.use(cookieParser());
 app.use(requestTimeout);
 app.use(apiLimiter);
