@@ -19,6 +19,7 @@ router.post(
 );
 router.post("/verify-email-otp", authController.verifyEmailOtp.bind(authController));
 router.post("/verify-sms-otp", authController.verifySmsOtp.bind(authController));
+router.post("/resend-sms-verification", authController.resendSmsVerification.bind(authController));
 router.post("/change-password", verifyToken, authController.changePassword.bind(authController));
 router.put("/update-user", verifyToken, authController.updateUser.bind(authController));
 router.post("/forgot-password", authController.forgotPassword.bind(authController));

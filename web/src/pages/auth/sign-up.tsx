@@ -117,8 +117,8 @@ export default function SignUp() {
                         <div className="p-4 text-sm bg-green-50 dark:bg-green-950 text-green-800 dark:text-green-200 rounded-md border border-green-200 dark:border-green-800">
                             <p className="font-medium">Hesabınız başarıyla oluşturuldu!</p>
                             <p className="mt-2">
-                                E-posta adresinize doğrulama linki gönderilmiştir. 
-                                Lütfen e-postanızı kontrol edin.
+                                Giriş yaparak hesabınızı doğrulayabilirsiniz. 
+                                Giriş yaptığınızda e-posta adresinize doğrulama kodu gönderilecektir.
                             </p>
                         </div>
                         <Button 

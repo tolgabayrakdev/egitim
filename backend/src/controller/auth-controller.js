@@ -232,4 +232,17 @@ export default class AuthController {
             next(error);
         }
     }
+
+    async resendSmsVerification(req, res, next) {
+        try {
+            const { email } = req.body;
+            const result = await this.authService.resendSmsVerification(email);
+            res.status(200).json({
+                success: true,
+                message: result
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }

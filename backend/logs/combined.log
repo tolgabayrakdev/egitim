@@ -7,3 +7,22 @@ error: POST /api/auth/register - 500 - relation "users" does not exist {"timesta
 error: POST /api/auth/register - 500 - relation "users" does not exist {"timestamp":"2025-11-13T18:40:35.338Z"}
 error: POST /api/auth/register - 500 - relation "users" does not exist {"timestamp":"2025-11-13T18:41:54.257Z"}
 error: POST /api/auth/register - 500 - relation "users" does not exist {"timestamp":"2025-11-13T18:43:06.791Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-13T20:27:28.743Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-13T20:27:28.766Z"}
+warn: POST /api/auth/login - 400 - Güvenlik doğrulama bilgileri eksik. {"timestamp":"2025-11-13T20:27:37.389Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:29:30.426Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:30:54.026Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:39:45.025Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:41:12.897Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:41:29.592Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:42:33.650Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:44:46.339Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:46:24.820Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:46:33.382Z"}
+error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:46:57.058Z"}
+warn: POST /api/auth/login - 404 - Kullanıcı bulunamadı! {"timestamp":"2025-11-13T20:50:00.141Z"}
+warn: POST /api/auth/verify-email-otp - 400 - Doğrulama kodu hatalı {"timestamp":"2025-11-13T20:51:57.143Z"}
+warn: POST /api/auth/verify-email-otp - 400 - Doğrulama kodu hatalı {"timestamp":"2025-11-13T20:52:17.675Z"}
+warn: POST /api/auth/resend-verification-email - 429 - Yeni bir doğrulama kodu istemeden önce lütfen birkaç dakika bekleyin. {"timestamp":"2025-11-13T21:05:36.143Z"}
+warn: POST /api/auth/resend-verification-email - 429 - Yeni bir doğrulama kodu istemeden önce lütfen birkaç dakika bekleyin. {"timestamp":"2025-11-13T21:05:48.740Z"}
+warn: POST /api/auth/resend-verification-email - 429 - Yeni bir doğrulama kodu istemeden önce lütfen birkaç dakika bekleyin. {"timestamp":"2025-11-13T21:05:50.060Z"}

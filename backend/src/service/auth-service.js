@@ -1,13 +1,10 @@
 import pool from "../config/database.js";
-import crypto from "node:crypto";
 import { randomUUID } from "node:crypto";
 import HttpException from "../exceptions/http-exception.js";
 import { generateAccessToken, generateRefreshToken, verifyToken } from "../util/jwt.js";
 import { comparePassword, hashPassword } from "../util/password.js";
 import { sendEmail } from "../util/send-email.js";
 import { sendSms } from "../util/send-sms.js";
-
-
 
 
 export default class AuthService {
@@ -48,7 +45,7 @@ export default class AuthService {
                 user.email,
                 "Edivora E-posta Doğrulama Kodu",
                 `<p>Merhaba ${user.first_name},</p>
-                <p>E-posta doğrulama kodunuz: <strong style="font-size: 24px; letter-spacing: 4px;">${code}</strong></p>
+                <p>E-posta doğrulama kodunuz: <strong style="font-size: 16px; letter-spacing: 4px;">${code}</strong></p>
                 <p>Bu kod 3 dakika geçerlidir.</p>`
             );
 
@@ -106,8 +103,6 @@ export default class AuthService {
             }
 
             const hashedPassword = await hashPassword(user.password);
-            const emailVerifyCode = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
-            const codeCreatedAt = new Date();
 
             const newUser = await client.query(
                 `
@@ -118,10 +113,8 @@ export default class AuthService {
                     last_name,
                     phone,
                     role,
-                    specialty,
-                    email_verify_code,
-                    email_verify_code_created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    specialty
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING id
                 `,
                 [
@@ -131,20 +124,11 @@ export default class AuthService {
                     user.last_name,
                     user.phone,
                     user.role || 'participant',
-                    user.specialty || null,
-                    emailVerifyCode,
-                    codeCreatedAt
+                    user.specialty || null
                 ]
             );
             await client.query("COMMIT");
 
-            await sendEmail(
-                user.email,
-                "Edivora E-posta Doğrulama Kodu",
-                `<p>Merhaba ${user.first_name},</p>
-                <p>E-posta doğrulama kodunuz: <strong style="font-size: 24px; letter-spacing: 4px;">${emailVerifyCode}</strong></p>
-                <p>Bu kod 3 dakika geçerlidir.</p>`
-            );
             return newUser.rows[0].id;
         } catch (error) {
             await client.query("ROLLBACK");
@@ -480,6 +464,59 @@ export default class AuthService {
             accessToken,
             refreshToken
         };
+    }
+
+    async resendSmsVerification(email) {
+        const result = await pool.query(
+            "SELECT * FROM users WHERE email = $1",
+            [email]
+        );
+
+        if (result.rows.length === 0) {
+            throw new HttpException(404, "Kullanıcı bulunamadı");
+        }
+
+        const user = result.rows[0];
+
+        if (user.is_sms_verified === true) {
+            throw new HttpException(400, "SMS zaten doğrulanmış");
+        }
+
+        const now = new Date();
+
+        if (user.sms_verify_code_created_at) {
+            const diffMs = now - new Date(user.sms_verify_code_created_at);
+            const diffMinutes = diffMs / (1000 * 60);
+
+            // Son gönderim üzerinden 2 dakika geçmedi ise
+            if (diffMinutes < 2) {
+                throw new HttpException(
+                    429,
+                    "Yeni bir SMS doğrulama kodu istemeden önce lütfen birkaç dakika bekleyin."
+                );
+            }
+        }
+
+        const newCode = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
+        const newCreatedAt = new Date();
+
+        await pool.query(
+            `
+            UPDATE users 
+            SET sms_verify_code = $1, sms_verify_code_created_at = $2
+            WHERE email = $3
+            `,
+            [newCode, newCreatedAt, email]
+        );
+
+        // Send SMS
+        const phoneNumber = user.phone;
+        if (!phoneNumber) {
+            throw new HttpException(400, "SMS doğrulaması için kayıtlı bir telefon numarası bulunamadı.");
+        }
+        await sendSms({ msg: `RandevuHazır doğrulama kodunuz: ${newCode}. Kod 3 dakika geçerlidir.`, no: phoneNumber });
+
+        return { message: "Yeni bir SMS doğrulama kodu gönderildi." };
     }
 
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,16 +11,69 @@ export default function SignIn() {
     const [step, setStep] = useState<Step>("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [emailOtpCode, setEmailOtpCode] = useState("");
-    const [smsOtpCode, setSmsOtpCode] = useState("");
+    const [emailOtpCode, setEmailOtpCode] = useState(["", "", "", "", "", ""]);
+    const [smsOtpCode, setSmsOtpCode] = useState(["", "", "", "", "", ""]);
     const [maskedPhone, setMaskedPhone] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [captchaNum1, setCaptchaNum1] = useState(0);
+    const [captchaNum2, setCaptchaNum2] = useState(0);
+    const [captchaAnswer, setCaptchaAnswer] = useState("");
+    const [smsTimer, setSmsTimer] = useState(0);
+    const [resendingEmail, setResendingEmail] = useState(false);
+    const [resendingSms, setResendingSms] = useState(false);
     const navigate = useNavigate();
+
+    // Generate new captcha
+    const generateCaptcha = () => {
+        const num1 = Math.floor(Math.random() * 10) + 1;
+        const num2 = Math.floor(Math.random() * 10) + 1;
+        setCaptchaNum1(num1);
+        setCaptchaNum2(num2);
+        setCaptchaAnswer("");
+    };
+
+    useEffect(() => {
+        generateCaptcha();
+    }, []);
+
+    // SMS timer effect
+    useEffect(() => {
+        if (step === "smsOtp" && smsTimer > 0) {
+            const interval = setInterval(() => {
+                setSmsTimer((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [step, smsTimer]);
+
+    // Start SMS timer when SMS step is reached
+    useEffect(() => {
+        if (step === "smsOtp") {
+            setSmsTimer(180); // 3 minutes = 180 seconds
+        }
+    }, [step]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+        
+        // Validate captcha
+        const userAnswer = parseInt(captchaAnswer);
+        const correctAnswer = captchaNum1 + captchaNum2;
+        
+        if (isNaN(userAnswer) || userAnswer !== correctAnswer) {
+            setError("Güvenlik sorusu cevabı yanlış. Lütfen tekrar deneyin.");
+            generateCaptcha();
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -30,7 +83,12 @@ export default function SignIn() {
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ 
+                    email, 
+                    password,
+                    captchaAnswer: userAnswer,
+                    captchaSum: correctAnswer
+                }),
             });
 
             const data = await response.json();
@@ -41,11 +99,13 @@ export default function SignIn() {
                 } else if (data.message === "SMS doğrulaması gerekli") {
                     setMaskedPhone(data.maskedPhone);
                     setStep("smsOtp");
+                    setSmsTimer(180); // Start 3 minute timer
                 }
                 return;
             }
 
             if (!response.ok) {
+                generateCaptcha(); // Generate new captcha on error
                 throw new Error(data.message || "Giriş başarısız");
             }
 
@@ -54,8 +114,51 @@ export default function SignIn() {
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "Bir hata oluştu";
             setError(errorMessage);
+            generateCaptcha(); // Generate new captcha on error
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleEmailOtpChange = (index: number, value: string) => {
+        if (value.length > 1) {
+            // Paste event - handle multiple digits
+            const digits = value.replace(/\D/g, "").slice(0, 6).split("");
+            const newCode = [...emailOtpCode];
+            digits.forEach((digit, i) => {
+                if (index + i < 6) {
+                    newCode[index + i] = digit;
+                }
+            });
+            setEmailOtpCode(newCode);
+            // Focus on the last filled input or the last one
+            const lastIndex = Math.min(index + digits.length - 1, 5);
+            const nextInput = document.getElementById(`emailOtp-${lastIndex}`);
+            if (nextInput) {
+                (nextInput as HTMLInputElement).focus();
+            }
+        } else {
+            // Single digit input
+            const newCode = [...emailOtpCode];
+            newCode[index] = value.replace(/\D/g, "").slice(0, 1);
+            setEmailOtpCode(newCode);
+            
+            // Auto-focus next input
+            if (value && index < 5) {
+                const nextInput = document.getElementById(`emailOtp-${index + 1}`);
+                if (nextInput) {
+                    (nextInput as HTMLInputElement).focus();
+                }
+            }
+        }
+    };
+
+    const handleEmailOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Backspace" && !emailOtpCode[index] && index > 0) {
+            const prevInput = document.getElementById(`emailOtp-${index - 1}`);
+            if (prevInput) {
+                (prevInput as HTMLInputElement).focus();
+            }
         }
     };
 
@@ -64,6 +167,13 @@ export default function SignIn() {
         setError("");
         setLoading(true);
 
+        const code = emailOtpCode.join("");
+        if (code.length !== 6) {
+            setError("Lütfen 6 haneli kodu girin");
+            setLoading(false);
+            return;
+        }
+
         try {
             const response = await fetch(apiUrl("api/auth/verify-email-otp"), {
                 method: "POST",
@@ -71,7 +181,7 @@ export default function SignIn() {
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify({ email, code: emailOtpCode }),
+                body: JSON.stringify({ email, code }),
             });
 
             const data = await response.json();
@@ -81,13 +191,23 @@ export default function SignIn() {
             }
 
             // Email doğrulandı, şimdi SMS OTP gönder
+            // Generate new captcha for second login attempt
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            const captchaSum = num1 + num2;
+            
             const loginResponse = await fetch(apiUrl("api/auth/login"), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ 
+                    email, 
+                    password,
+                    captchaAnswer: captchaSum,
+                    captchaSum: captchaSum
+                }),
             });
 
             const loginData = await loginResponse.json();
@@ -95,6 +215,7 @@ export default function SignIn() {
             if (loginResponse.status === 202 && loginData.message === "SMS doğrulaması gerekli") {
                 setMaskedPhone(loginData.maskedPhone);
                 setStep("smsOtp");
+                setSmsTimer(180); // Start 3 minute timer
             } else if (loginResponse.ok) {
                 navigate("/");
             } else {
@@ -108,10 +229,142 @@ export default function SignIn() {
         }
     };
 
+    const handleSmsOtpChange = (index: number, value: string) => {
+        if (value.length > 1) {
+            // Paste event - handle multiple digits
+            const digits = value.replace(/\D/g, "").slice(0, 6).split("");
+            const newCode = [...smsOtpCode];
+            digits.forEach((digit, i) => {
+                if (index + i < 6) {
+                    newCode[index + i] = digit;
+                }
+            });
+            setSmsOtpCode(newCode);
+            // Focus on the last filled input or the last one
+            const lastIndex = Math.min(index + digits.length - 1, 5);
+            const nextInput = document.getElementById(`smsOtp-${lastIndex}`);
+            if (nextInput) {
+                (nextInput as HTMLInputElement).focus();
+            }
+        } else {
+            // Single digit input
+            const newCode = [...smsOtpCode];
+            newCode[index] = value.replace(/\D/g, "").slice(0, 1);
+            setSmsOtpCode(newCode);
+            
+            // Auto-focus next input
+            if (value && index < 5) {
+                const nextInput = document.getElementById(`smsOtp-${index + 1}`);
+                if (nextInput) {
+                    (nextInput as HTMLInputElement).focus();
+                }
+            }
+        }
+    };
+
+    const handleSmsOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Backspace" && !smsOtpCode[index] && index > 0) {
+            const prevInput = document.getElementById(`smsOtp-${index - 1}`);
+            if (prevInput) {
+                (prevInput as HTMLInputElement).focus();
+            }
+        }
+    };
+
+    const handleResendEmail = async () => {
+        setResendingEmail(true);
+        setError("");
+        try {
+            const response = await fetch(apiUrl("api/auth/resend-verification-email"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "E-posta gönderilemedi");
+            }
+
+            // Reset OTP code
+            setEmailOtpCode(["", "", "", "", "", ""]);
+            // Focus first input
+            setTimeout(() => {
+                const firstInput = document.getElementById("emailOtp-0");
+                if (firstInput) {
+                    (firstInput as HTMLInputElement).focus();
+                }
+            }, 100);
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : "Bir hata oluştu";
+            setError(errorMessage);
+        } finally {
+            setResendingEmail(false);
+        }
+    };
+
+    const handleResendSms = async () => {
+        if (smsTimer > 0) {
+            return; // Don't allow resend if timer is still running
+        }
+
+        setResendingSms(true);
+        setError("");
+        try {
+            const response = await fetch(apiUrl("api/auth/resend-sms-verification"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "SMS gönderilemedi");
+            }
+
+            // Reset OTP code and timer
+            setSmsOtpCode(["", "", "", "", "", ""]);
+            setSmsTimer(180); // Reset to 3 minutes
+            // Focus first input
+            setTimeout(() => {
+                const firstInput = document.getElementById("smsOtp-0");
+                if (firstInput) {
+                    (firstInput as HTMLInputElement).focus();
+                }
+            }, 100);
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : "Bir hata oluştu";
+            setError(errorMessage);
+        } finally {
+            setResendingSms(false);
+        }
+    };
+
+    const formatTimer = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, "0")}`;
+    };
+
     const handleSmsOtpSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         setLoading(true);
+
+        const code = smsOtpCode.join("");
+        if (code.length !== 6) {
+            setError("Lütfen 6 haneli kodu girin");
+            setLoading(false);
+            return;
+        }
 
         try {
             const response = await fetch(apiUrl("api/auth/verify-sms-otp"), {
@@ -120,7 +373,7 @@ export default function SignIn() {
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify({ email, code: smsOtpCode }),
+                body: JSON.stringify({ email, code }),
             });
 
             const data = await response.json();
@@ -193,10 +446,41 @@ export default function SignIn() {
                                 disabled={loading}
                             />
                         </div>
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="captcha" className="text-sm whitespace-nowrap">Güvenlik:</Label>
+                            <div className="flex items-center gap-1.5 px-2 py-1.5 bg-muted rounded border text-sm">
+                                <span className="font-medium">{captchaNum1}</span>
+                                <span>+</span>
+                                <span className="font-medium">{captchaNum2}</span>
+                                <span>=</span>
+                            </div>
+                            <Input
+                                id="captcha"
+                                type="number"
+                                placeholder="?"
+                                value={captchaAnswer}
+                                onChange={(e) => setCaptchaAnswer(e.target.value)}
+                                required
+                                disabled={loading}
+                                className="w-16 h-9"
+                                min="0"
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={generateCaptcha}
+                                disabled={loading}
+                                title="Yenile"
+                                className="h-9 w-9"
+                            >
+                                🔄
+                            </Button>
+                        </div>
                         <Button 
                             type="submit" 
                             className="w-full" 
-                            disabled={loading}
+                            disabled={loading || !captchaAnswer}
                         >
                             {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
                         </Button>
@@ -211,35 +495,56 @@ export default function SignIn() {
                             </div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="emailOtp">E-posta Doğrulama Kodu</Label>
-                            <Input
-                                id="emailOtp"
-                                type="text"
-                                placeholder="123456"
-                                value={emailOtpCode}
-                                onChange={(e) => setEmailOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                                required
-                                disabled={loading}
-                                maxLength={6}
-                                className="text-center text-2xl tracking-widest"
-                            />
+                            <Label>E-posta Doğrulama Kodu</Label>
+                            <div className="flex justify-center gap-2">
+                                {emailOtpCode.map((digit, index) => (
+                                    <Input
+                                        key={index}
+                                        id={`emailOtp-${index}`}
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={digit}
+                                        onChange={(e) => handleEmailOtpChange(index, e.target.value)}
+                                        onKeyDown={(e) => handleEmailOtpKeyDown(index, e)}
+                                        required
+                                        disabled={loading}
+                                        maxLength={1}
+                                        className="w-12 h-14 text-center text-2xl font-semibold"
+                                        autoFocus={index === 0}
+                                    />
+                                ))}
+                            </div>
                         </div>
                         <Button 
                             type="submit" 
                             className="w-full" 
-                            disabled={loading || emailOtpCode.length !== 6}
+                            disabled={loading || emailOtpCode.join("").length !== 6}
                         >
                             {loading ? "Doğrulanıyor..." : "Doğrula"}
                         </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => setStep("login")}
-                            disabled={loading}
-                        >
-                            Geri
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => {
+                                    setStep("login");
+                                    setEmailOtpCode(["", "", "", "", "", ""]);
+                                }}
+                                disabled={loading}
+                            >
+                                Geri
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={handleResendEmail}
+                                disabled={loading || resendingEmail}
+                            >
+                                {resendingEmail ? "Gönderiliyor..." : "Tekrar Gönder"}
+                            </Button>
+                        </div>
                     </form>
                 )}
 
@@ -251,35 +556,61 @@ export default function SignIn() {
                             </div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="smsOtp">SMS Doğrulama Kodu</Label>
-                            <Input
-                                id="smsOtp"
-                                type="text"
-                                placeholder="123456"
-                                value={smsOtpCode}
-                                onChange={(e) => setSmsOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                                required
-                                disabled={loading}
-                                maxLength={6}
-                                className="text-center text-2xl tracking-widest"
-                            />
+                            <Label>SMS Doğrulama Kodu</Label>
+                            <div className="flex justify-center gap-2">
+                                {smsOtpCode.map((digit, index) => (
+                                    <Input
+                                        key={index}
+                                        id={`smsOtp-${index}`}
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={digit}
+                                        onChange={(e) => handleSmsOtpChange(index, e.target.value)}
+                                        onKeyDown={(e) => handleSmsOtpKeyDown(index, e)}
+                                        required
+                                        disabled={loading}
+                                        maxLength={1}
+                                        className="w-12 h-14 text-center text-2xl font-semibold"
+                                        autoFocus={index === 0}
+                                    />
+                                ))}
+                            </div>
                         </div>
                         <Button 
                             type="submit" 
                             className="w-full" 
-                            disabled={loading || smsOtpCode.length !== 6}
+                            disabled={loading || smsOtpCode.join("").length !== 6}
                         >
                             {loading ? "Doğrulanıyor..." : "Doğrula"}
                         </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => setStep("login")}
-                            disabled={loading}
-                        >
-                            Geri
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => {
+                                    setStep("login");
+                                    setSmsOtpCode(["", "", "", "", "", ""]);
+                                    setSmsTimer(0);
+                                }}
+                                disabled={loading}
+                            >
+                                Geri
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={handleResendSms}
+                                disabled={loading || resendingSms || smsTimer > 0}
+                            >
+                                {resendingSms 
+                                    ? "Gönderiliyor..." 
+                                    : smsTimer > 0 
+                                        ? `Tekrar Gönder (${formatTimer(smsTimer)})`
+                                        : "Tekrar Gönder"}
+                            </Button>
+                        </div>
                     </form>
                 )}
 
