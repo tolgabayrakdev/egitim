@@ -9,6 +9,12 @@ export default class AuthController {
         try {
             const { email, password } = req.body;
             const result = await this.authService.login(email, password);
+            if (result.emailRequired) {
+                return res.status(202).json({
+                    message: "E-posta doğrulaması gerekli",
+                    email: result.email,
+                });
+            }
             if (result.smsRequired) {
                 return res.status(202).json({
                     message: "SMS doğrulaması gerekli",
@@ -183,6 +189,44 @@ export default class AuthController {
                 success: true,
                 message: "Kullanıcı doğrulandı",
                 user: user
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async verifyEmailOtp(req, res, next) {
+        try {
+            const { email, code } = req.body;
+            const result = await this.authService.verifyEmailOtp(email, code);
+            res.status(200).json({
+                success: true,
+                message: result.message
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async verifySmsOtp(req, res, next) {
+        try {
+            const { email, code } = req.body;
+            const result = await this.authService.verifySmsOtp(email, code);
+            res.cookie("access_token", result.accessToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+            });
+            res.cookie("refresh_token", result.refreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+            });
+            res.status(200).json({
+                success: true,
+                message: result.message,
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken
             });
         } catch (error) {
             next(error);

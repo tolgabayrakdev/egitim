@@ -5,6 +5,7 @@ import HttpException from "../exceptions/http-exception.js";
 import { generateAccessToken, generateRefreshToken, verifyToken } from "../util/jwt.js";
 import { comparePassword, hashPassword } from "../util/password.js";
 import { sendEmail } from "../util/send-email.js";
+import { sendSms } from "../util/send-sms.js";
 
 
 
@@ -28,10 +29,30 @@ export default class AuthService {
         if (!isPasswordValid) {
             throw new HttpException(401, "Sifre yanlış!");
         }
+        
         // Backward compatibility: prefer new column if exists; fall back to is_verified
         const isEmailVerified = user.is_email_verified ?? user.is_verified;
+        
+        // If email verification required and not yet verified, send OTP and return 202-style payload
         if (!isEmailVerified) {
-            throw new HttpException(403, "Lütfen e-postanızı doğrulayın.");
+            const code = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
+            const createdAt = new Date();
+
+            await pool.query(
+                `UPDATE users SET email_verify_code = $1, email_verify_code_created_at = $2 WHERE id = $3`,
+                [code, createdAt, user.id]
+            );
+
+            // Send email OTP
+            await sendEmail(
+                user.email,
+                "Edivora E-posta Doğrulama Kodu",
+                `<p>Merhaba ${user.first_name},</p>
+                <p>E-posta doğrulama kodunuz: <strong style="font-size: 24px; letter-spacing: 4px;">${code}</strong></p>
+                <p>Bu kod 3 dakika geçerlidir.</p>`
+            );
+
+            return { emailRequired: true, email: user.email };
         }
 
         // If SMS verification required and not yet verified, send OTP and return 202-style payload
@@ -85,8 +106,8 @@ export default class AuthService {
             }
 
             const hashedPassword = await hashPassword(user.password);
-            const emailVerifyToken = crypto.randomBytes(32).toString("hex");
-            const tokenCreatedAt = new Date();
+            const emailVerifyCode = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
+            const codeCreatedAt = new Date();
 
             const newUser = await client.query(
                 `
@@ -98,8 +119,8 @@ export default class AuthService {
                     phone,
                     role,
                     specialty,
-                    email_verify_token,
-                    email_verify_token_created_at
+                    email_verify_code,
+                    email_verify_code_created_at
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 RETURNING id
                 `,
@@ -111,18 +132,18 @@ export default class AuthService {
                     user.phone,
                     user.role || 'participant',
                     user.specialty || null,
-                    emailVerifyToken,
-                    tokenCreatedAt
+                    emailVerifyCode,
+                    codeCreatedAt
                 ]
             );
             await client.query("COMMIT");
 
-            const verifyUrl = `https://${process.env.HOST}/verify-email?token=${emailVerifyToken}`;
             await sendEmail(
                 user.email,
-                "Edivora Hesabınızı Onaylayın",
+                "Edivora E-posta Doğrulama Kodu",
                 `<p>Merhaba ${user.first_name},</p>
-                <p>Lütfen e-postanızı onaylamak için <a href="${verifyUrl}">buraya tıklayın</a>.</p>`
+                <p>E-posta doğrulama kodunuz: <strong style="font-size: 24px; letter-spacing: 4px;">${emailVerifyCode}</strong></p>
+                <p>Bu kod 3 dakika geçerlidir.</p>`
             );
             return newUser.rows[0].id;
         } catch (error) {
@@ -185,50 +206,40 @@ export default class AuthService {
 
         const now = new Date();
 
-        if (user.email_verify_token_created_at) {
-            const diffMs = now - new Date(user.email_verify_token_created_at);
+        if (user.email_verify_code_created_at) {
+            const diffMs = now - new Date(user.email_verify_code_created_at);
             const diffMinutes = diffMs / (1000 * 60);
 
-            // ✅ 1. Token hâlâ geçerliyse (1 saat içinde)
-            if (diffMinutes < 60) {
-                // ✅ 2. Son gönderim üzerinden 2 dakika geçmedi ise
-                if (diffMinutes < 2) {
-                    throw new HttpException(
-                        429,
-                        "Yeni bir doğrulama e-postası istemeden önce lütfen birkaç dakika bekleyin."
-                    );
-                }
-                const verifyUrl = `https://${process.env.HOST}/verify-email?token=${user.email_verify_token}`;
-                await sendEmail(
-                    user.email,
-                    "Edivora Hesabınızı Onaylayın",
-                    `<p>Merhaba ${user.first_name},</p>
-                    <p>Lütfen e-postanızı onaylamak için <a href="${verifyUrl}">buraya tıklayın</a>.</p>`
+            // ✅ Son gönderim üzerinden 2 dakika geçmedi ise
+            if (diffMinutes < 2) {
+                throw new HttpException(
+                    429,
+                    "Yeni bir doğrulama kodu istemeden önce lütfen birkaç dakika bekleyin."
                 );
-                return { message: "Yeni bir doğrulama e-postası gönderildi." };
             }
         }
-        const newToken = crypto.randomBytes(32).toString("hex");
+
+        const newCode = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
         const newCreatedAt = new Date();
 
         await pool.query(
             `
             UPDATE users 
-            SET email_verify_token = $1, email_verify_token_created_at = $2
+            SET email_verify_code = $1, email_verify_code_created_at = $2
             WHERE email = $3
         `,
-            [newToken, newCreatedAt, email]
+            [newCode, newCreatedAt, email]
         );
 
-        const verifyUrl = `https://${process.env.HOST}/verify-email?token=${newToken}`;
         await sendEmail(
             user.email,
-            "Edivora Hesabınızı Onaylayın",
+            "Edivora E-posta Doğrulama Kodu",
             `<p>Merhaba ${user.first_name},</p>
-            <p>Lütfen e-postanızı onaylamak için <a href="${verifyUrl}">buraya tıklayın</a>.</p>`
+            <p>E-posta doğrulama kodunuz: <strong style="font-size: 24px; letter-spacing: 4px;">${newCode}</strong></p>
+            <p>Bu kod 3 dakika geçerlidir.</p>`
         );
 
-        return { message: "Yeni bir doğrulama e-postası gönderildi." };
+        return { message: "Yeni bir doğrulama kodu gönderildi." };
     }
 
     async changePassword(id, currentPassword, newPassword) {
@@ -377,6 +388,98 @@ export default class AuthService {
             if (error instanceof HttpException) throw error;
             throw new HttpException(500, error.message || "Kullanıcı doğrulanırken hata oluştu");
         }
+    }
+
+    async verifyEmailOtp(email, code) {
+        const result = await pool.query(
+            "SELECT * FROM users WHERE email = $1",
+            [email]
+        );
+
+        if (result.rows.length === 0) {
+            throw new HttpException(404, "Kullanıcı bulunamadı");
+        }
+
+        const user = result.rows[0];
+
+        // Backward compatibility: check both columns
+        const isEmailVerified = user.is_email_verified ?? user.is_verified;
+        if (isEmailVerified) {
+            throw new HttpException(400, "E-posta zaten doğrulanmış");
+        }
+
+        if (user.email_verify_code !== code) {
+            throw new HttpException(400, "Doğrulama kodu hatalı");
+        }
+
+        const now = new Date();
+        const codeCreatedAt = new Date(user.email_verify_code_created_at);
+        const diffMs = now - codeCreatedAt;
+        const diffMinutes = diffMs / (1000 * 60);
+
+        if (diffMinutes > 3) {
+            throw new HttpException(400, "Doğrulama kodu süresi dolmuş");
+        }
+
+        await pool.query(
+            `
+            UPDATE users 
+            SET is_email_verified = true, is_verified = true, email_verify_code = NULL, email_verify_code_created_at = NULL
+            WHERE email = $1
+            `,
+            [email]
+        );
+
+        return { message: "E-posta başarıyla doğrulandı" };
+    }
+
+    async verifySmsOtp(email, code) {
+        const result = await pool.query(
+            "SELECT * FROM users WHERE email = $1",
+            [email]
+        );
+
+        if (result.rows.length === 0) {
+            throw new HttpException(404, "Kullanıcı bulunamadı");
+        }
+
+        const user = result.rows[0];
+
+        if (user.is_sms_verified === true) {
+            throw new HttpException(400, "SMS zaten doğrulanmış");
+        }
+
+        if (user.sms_verify_code !== code) {
+            throw new HttpException(400, "Doğrulama kodu hatalı");
+        }
+
+        const now = new Date();
+        const codeCreatedAt = new Date(user.sms_verify_code_created_at);
+        const diffMs = now - codeCreatedAt;
+        const diffMinutes = diffMs / (1000 * 60);
+
+        if (diffMinutes > 3) {
+            throw new HttpException(400, "Doğrulama kodu süresi dolmuş");
+        }
+
+        await pool.query(
+            `
+            UPDATE users 
+            SET is_sms_verified = true, sms_verify_code = NULL, sms_verify_code_created_at = NULL
+            WHERE email = $1
+            `,
+            [email]
+        );
+
+        // After SMS verification, generate tokens
+        const accessToken = generateAccessToken({ id: user.id, role: "user" });
+        const refreshToken = generateRefreshToken({ id: user.id, role: "user" });
+        
+        return { 
+            message: "SMS başarıyla doğrulandı",
+            accessToken,
+            refreshToken
+        };
     }
 
 }

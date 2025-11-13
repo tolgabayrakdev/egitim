@@ -1,0 +1,5 @@
+error: POST /api/auth/register - 500 - relation "users" does not exist {"timestamp":"2025-11-13T18:23:32.746Z"}
+error: POST /api/auth/register - 500 - relation "users" does not exist {"timestamp":"2025-11-13T18:26:01.556Z"}
+error: POST /api/auth/register - 500 - relation "users" does not exist {"timestamp":"2025-11-13T18:40:35.338Z"}
+error: POST /api/auth/register - 500 - relation "users" does not exist {"timestamp":"2025-11-13T18:41:54.257Z"}
+error: POST /api/auth/register - 500 - relation "users" does not exist {"timestamp":"2025-11-13T18:43:06.791Z"}
