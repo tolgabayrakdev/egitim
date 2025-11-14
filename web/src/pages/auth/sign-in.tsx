@@ -22,7 +22,33 @@ export default function SignIn() {
     const [smsTimer, setSmsTimer] = useState(0);
     const [resendingEmail, setResendingEmail] = useState(false);
     const [resendingSms, setResendingSms] = useState(false);
+    const [checkingAuth, setCheckingAuth] = useState(true);
     const navigate = useNavigate();
+
+    // Check if user is already logged in
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const response = await fetch(apiUrl("api/auth/me"), {
+                    method: "GET",
+                    credentials: "include",
+                });
+
+                if (response.ok) {
+                    // User is already logged in, redirect to dashboard
+                    navigate("/");
+                } else {
+                    // User is not logged in, show sign-in form
+                    setCheckingAuth(false);
+                }
+            } catch {
+                // Error checking auth, show sign-in form
+                setCheckingAuth(false);
+            }
+        };
+
+        checkAuth();
+    }, [navigate]);
 
     // Generate new captcha
     const generateCaptcha = () => {
@@ -391,6 +417,18 @@ export default function SignIn() {
             setLoading(false);
         }
     };
+
+    // Show loading while checking authentication
+    if (checkingAuth) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                    <div className="text-muted-foreground">Yükleniyor...</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">

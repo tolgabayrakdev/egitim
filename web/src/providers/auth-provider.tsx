@@ -15,6 +15,7 @@ function AuthProvider({ children }: AuthProviderProps) {
     const [loading, setLoading] = useState(true);
     const [accessDenied, setAccessDenied] = useState(false);
     const [rateLimited, setRateLimited] = useState(false);
+    const [needsSubscription, setNeedsSubscription] = useState(false);
 
     const verifyAuthToken = async () => {
         try {
@@ -30,6 +31,27 @@ function AuthProvider({ children }: AuthProviderProps) {
             clearTimeout(timeoutId);
             
             if (res.status === 200) {
+                const userData = await res.json();
+                
+                // Profesyonel kullanıcılar için subscription kontrolü
+                if (userData.user?.role === 'professional') {
+                    const subscriptionRes = await fetch(apiUrl('/api/subscriptions/check'), {
+                        method: 'GET',
+                        credentials: 'include',
+                        signal: controller.signal,
+                    });
+                    
+                    if (subscriptionRes.ok) {
+                        const subscriptionData = await subscriptionRes.json();
+                        
+                        if (subscriptionData.required && !subscriptionData.hasSubscription) {
+                            setLoading(false);
+                            setNeedsSubscription(true);
+                            return;
+                        }
+                    }
+                }
+                
                 setLoading(false);
                 setRateLimited(false);
             } else if (res.status === 403) {
@@ -90,6 +112,12 @@ function AuthProvider({ children }: AuthProviderProps) {
         }
     }, [accessDenied]);
 
+    useEffect(() => {
+        if (needsSubscription) {
+            navigate('/subscription');
+        }
+    }, [needsSubscription, navigate]);
+
     // If access denied, don't render anything (redirect is happening)
     if (accessDenied) {
         return null;
@@ -97,6 +125,8 @@ function AuthProvider({ children }: AuthProviderProps) {
 
     if (loading) {
         return <Loading />
+    } else if (needsSubscription) {
+        return <Loading /> // Subscription sayfasına yönlendirilirken loading göster
     } else if (rateLimited) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">

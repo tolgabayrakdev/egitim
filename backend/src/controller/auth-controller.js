@@ -42,14 +42,33 @@ export default class AuthController {
         try {
             const { first_name, last_name, email, phone, password, role, specialty } = req.body;
 
+            // Sadece profesyoneller kayıt olabilir
+            if (role && role !== 'professional') {
+                return res.status(400).json({
+                    success: false,
+                    message: "Sadece profesyoneller kayıt olabilir. Katılımcılar davet linki ile sisteme girebilir."
+                });
+            }
+
+            // Role'ü professional olarak sabitle
+            const userRole = 'professional';
+
+            // Specialty zorunlu
+            if (!specialty || !specialty.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Uzmanlık alanı zorunludur"
+                });
+            }
+
             const result = await this.authService.register({
                 first_name,
                 last_name,
                 email,
                 phone,
                 password,
-                role: role || 'participant',
-                specialty: specialty || null,
+                role: userRole,
+                specialty: specialty.trim(),
             });
             res.status(201).json({
                 success: true,

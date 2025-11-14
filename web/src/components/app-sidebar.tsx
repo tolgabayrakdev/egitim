@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router"
-import { Calendar, Home, Inbox, Search, Settings, User2, LogOut, Bell } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, User2, LogOut, Bell, UserPlus } from "lucide-react"
 
 import {
   Sidebar,
@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { apiUrl } from "@/lib/api"
 import { ModeToggle } from "@/components/mode-toggle"
 
@@ -57,6 +58,7 @@ interface UserResponse {
     first_name: string
     last_name: string
     email: string
+    role?: string
     [key: string]: unknown
   }
 }
@@ -144,6 +146,23 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 )
               })}
+              {user?.user?.role === 'professional' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={location.pathname === '/dashboard/invitations'}
+                    className="relative w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent/50"
+                  >
+                    <Link to="/dashboard/invitations" className="flex items-center gap-3">
+                      {location.pathname === '/dashboard/invitations' && (
+                        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-r" />
+                      )}
+                      <UserPlus className={`h-4 w-4 shrink-0 transition-colors ${location.pathname === '/dashboard/invitations' ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span className="truncate">Davetler</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -171,9 +190,19 @@ export function AppSidebar() {
                       <User2 className="h-4 w-4 text-sidebar-foreground/70" />
                     </div>
                     <div className="flex flex-col items-start text-left min-w-0 flex-1">
-                      <span className="text-xs font-medium text-sidebar-foreground truncate w-full">
-                        {user.user?.first_name} {user.user?.last_name}
-                      </span>
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="text-xs font-medium text-sidebar-foreground truncate">
+                          {user.user?.first_name} {user.user?.last_name}
+                        </span>
+                        {user.user?.role && (
+                          <Badge 
+                            variant={user.user.role === 'professional' ? 'default' : 'secondary'}
+                            className="text-[9px] px-1.5 py-0 h-4 shrink-0"
+                          >
+                            {user.user.role === 'professional' ? 'Profesyonel' : 'Katılımcı'}
+                          </Badge>
+                        )}
+                      </div>
                       <span className="text-[10px] text-sidebar-foreground/60 truncate w-full">
                         {user.user?.email}
                       </span>

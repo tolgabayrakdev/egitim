@@ -86,6 +86,16 @@ export default class AuthService {
         try {
             await client.query("BEGIN");
 
+            // Sadece profesyoneller kayıt olabilir
+            if (user.role !== 'professional') {
+                throw new HttpException(400, "Sadece profesyoneller kayıt olabilir. Katılımcılar davet linki ile sisteme girebilir.");
+            }
+
+            // Specialty zorunlu
+            if (!user.specialty || !user.specialty.trim()) {
+                throw new HttpException(400, "Uzmanlık alanı zorunludur");
+            }
+
             const existingUser = await client.query("SELECT * FROM users WHERE email = $1", [
                 user.email,
             ]);
@@ -123,8 +133,8 @@ export default class AuthService {
                     user.first_name,
                     user.last_name,
                     user.phone,
-                    user.role || 'participant',
-                    user.specialty || null
+                    user.role,
+                    user.specialty
                 ]
             );
             await client.query("COMMIT");

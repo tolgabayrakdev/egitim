@@ -1,52 +1,67 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiUrl } from "@/lib/api";
+import { toast } from "sonner";
 
-export default function SignUp() {
+interface InvitationInfo {
+    email: string;
+    inviterName: string;
+    programTitle: string | null;
+    programId: string | null;
+    expiresAt: string;
+}
+
+export default function AcceptInvitation() {
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const token = searchParams.get("token");
+
+    const [invitationInfo, setInvitationInfo] = useState<InvitationInfo | null>(null);
+    const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         first_name: "",
         last_name: "",
-        email: "",
         phone: "",
         password: "",
-        role: "professional" as "professional",
-        specialty: "",
     });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState(false);
-    const [checkingAuth, setCheckingAuth] = useState(true);
-    const navigate = useNavigate();
+    const [submitting, setSubmitting] = useState(false);
 
-    // Check if user is already logged in
     useEffect(() => {
-        const checkAuth = async () => {
+        if (!token) {
+            toast.error("Geçersiz davet bağlantısı");
+            navigate("/sign-in");
+            return;
+        }
+
+        const fetchInvitation = async () => {
             try {
-                const response = await fetch(apiUrl("api/auth/me"), {
-                    method: "GET",
+                const response = await fetch(apiUrl(`api/invitations/token?token=${token}`), {
                     credentials: "include",
                 });
 
-                if (response.ok) {
-                    // User is already logged in, redirect to dashboard
-                    navigate("/");
-                } else {
-                    // User is not logged in, show sign-up form
-                    setCheckingAuth(false);
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.message || "Davet bulunamadı");
                 }
-            } catch {
-                // Error checking auth, show sign-up form
-                setCheckingAuth(false);
+
+                const data = await response.json();
+                setInvitationInfo(data.invitation);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Davet yüklenemedi";
+                toast.error(errorMessage);
+                setTimeout(() => navigate("/sign-in"), 2000);
+            } finally {
+                setLoading(false);
             }
         };
 
-        checkAuth();
-    }, [navigate]);
+        fetchInvitation();
+    }, [token, navigate]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         
         // Telefon numarası için sadece rakamları al
@@ -66,38 +81,36 @@ export default function SignUp() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
-        setSuccess(false);
-
-        // Specialty zorunlu
-        if (!formData.specialty.trim()) {
-            setError("Uzmanlık alanı zorunludur");
-            return;
-        }
+        setSubmitting(true);
 
         // Telefon numarası validasyonu (10 haneli olmalı)
         if (formData.phone.length !== 10) {
-            setError("Telefon numarası 10 haneli olmalıdır");
+            toast.error("Telefon numarası 10 haneli olmalıdır");
+            setSubmitting(false);
             return;
         }
 
-        setLoading(true);
+        // Şifre validasyonu
+        if (formData.password.length < 6) {
+            toast.error("Şifre en az 6 karakter olmalıdır");
+            setSubmitting(false);
+            return;
+        }
 
         try {
             // Telefon numarasına +90 ekle
             const fullPhone = `+90${formData.phone}`;
             
             const payload = {
+                token,
+                email: invitationInfo?.email,
                 first_name: formData.first_name,
                 last_name: formData.last_name,
-                email: formData.email,
                 phone: fullPhone,
                 password: formData.password,
-                role: formData.role,
-                specialty: formData.specialty,
             };
 
-            const response = await fetch(apiUrl("api/auth/register"), {
+            const response = await fetch(apiUrl("api/invitations/accept"), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -112,26 +125,30 @@ export default function SignUp() {
                 throw new Error(data.message || "Kayıt başarısız");
             }
 
-            // Başarılı kayıt
-            setSuccess(true);
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Bir hata oluştu";
-            setError(errorMessage);
+            toast.success("Hesabınız başarıyla oluşturuldu! Giriş yapabilirsiniz.");
+            // Sign-in sayfasına yönlendir
+            setTimeout(() => navigate("/sign-in"), 1500);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Bir hata oluştu";
+            toast.error(errorMessage);
         } finally {
-            setLoading(false);
+            setSubmitting(false);
         }
     };
 
-    // Show loading while checking authentication
-    if (checkingAuth) {
+    if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-                    <div className="text-muted-foreground">Yükleniyor...</div>
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Davet bilgileri yükleniyor...</p>
                 </div>
             </div>
         );
+    }
+
+    if (!invitationInfo) {
+        return null;
     }
 
     return (
@@ -145,34 +162,26 @@ export default function SignUp() {
                             className="h-20 w-auto"
                         />
                     </div>
-                    <h1 className="text-2xl font-semibold">Profesyonel Kayıt</h1>
+                    <h1 className="text-2xl font-semibold">Daveti Kabul Et</h1>
+                    <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-2">
+                            <strong>{invitationInfo.inviterName}</strong> sizi sisteme davet etti.
+                        </p>
+                        {invitationInfo.programTitle && (
+                            <p className="text-sm text-muted-foreground">
+                                Program: <strong>{invitationInfo.programTitle}</strong>
+                            </p>
+                        )}
+                        <p className="text-sm text-muted-foreground mt-2">
+                            E-posta: <strong>{invitationInfo.email}</strong>
+                        </p>
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                        Profesyonel hesap oluşturmak için bilgilerinizi girin
+                        Hesabınızı oluşturmak için aşağıdaki bilgileri doldurun
                     </p>
                 </div>
-                {success ? (
-                    <div className="space-y-4">
-                        <div className="p-4 text-sm bg-green-50 dark:bg-green-950 text-green-800 dark:text-green-200 rounded-md border border-green-200 dark:border-green-800">
-                            <p className="font-medium">Hesabınız başarıyla oluşturuldu!</p>
-                            <p className="mt-2">
-                                Giriş yaparak hesabınızı doğrulayabilirsiniz. 
-                                Giriş yaptığınızda e-posta adresinize doğrulama kodu gönderilecektir.
-                            </p>
-                        </div>
-                        <Button 
-                            onClick={() => navigate("/sign-in")}
-                            className="w-full"
-                        >
-                            Giriş Ekranına Git
-                        </Button>
-                    </div>
-                ) : (
+
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && (
-                        <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
-                            {error}
-                        </div>
-                    )}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="first_name">Ad</Label>
@@ -184,7 +193,7 @@ export default function SignUp() {
                                 value={formData.first_name}
                                 onChange={handleChange}
                                 required
-                                disabled={loading}
+                                disabled={submitting}
                             />
                         </div>
                         <div className="space-y-2">
@@ -197,23 +206,25 @@ export default function SignUp() {
                                 value={formData.last_name}
                                 onChange={handleChange}
                                 required
-                                disabled={loading}
+                                disabled={submitting}
                             />
                         </div>
                     </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="email">E-posta</Label>
                         <Input
                             id="email"
-                            name="email"
                             type="email"
-                            placeholder="ornek@email.com"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                            disabled={loading}
+                            value={invitationInfo.email}
+                            disabled
+                            className="bg-muted"
                         />
+                        <p className="text-xs text-muted-foreground">
+                            Bu e-posta adresi davet ile belirlenmiştir ve değiştirilemez
+                        </p>
                     </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="phone">Telefon</Label>
                         <div className="flex items-center">
@@ -228,25 +239,13 @@ export default function SignUp() {
                                 value={formData.phone}
                                 onChange={handleChange}
                                 required
-                                disabled={loading}
+                                disabled={submitting}
                                 className="rounded-l-none"
                                 maxLength={10}
                             />
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="specialty">Uzmanlık Alanı</Label>
-                        <Input
-                            id="specialty"
-                            name="specialty"
-                            type="text"
-                            placeholder="Örn: Psikoloji, Eğitim, Koçluk"
-                            value={formData.specialty}
-                            onChange={handleChange}
-                            required
-                            disabled={loading}
-                        />
-                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="password">Şifre</Label>
                         <Input
@@ -257,31 +256,24 @@ export default function SignUp() {
                             value={formData.password}
                             onChange={handleChange}
                             required
-                            disabled={loading}
+                            disabled={submitting}
                             minLength={6}
                         />
+                        <p className="text-xs text-muted-foreground">
+                            Şifre en az 6 karakter olmalıdır
+                        </p>
                     </div>
+
                     <Button 
                         type="submit" 
                         className="w-full" 
-                        disabled={loading}
+                        disabled={submitting}
                     >
-                        {loading ? "Kayıt yapılıyor..." : "Kayıt Ol"}
+                        {submitting ? "Kayıt yapılıyor..." : "Daveti Kabul Et ve Kayıt Ol"}
                     </Button>
                 </form>
-                )}
-                {!success && (
-                <div className="text-center text-sm">
-                    Zaten hesabınız var mı?{" "}
-                    <Link 
-                        to="/sign-in" 
-                        className="text-primary hover:underline font-medium"
-                    >
-                        Giriş yapın
-                    </Link>
-                </div>
-                )}
             </div>
         </div>
     );
 }
+
