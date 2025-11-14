@@ -12,7 +12,7 @@ interface Invitation {
     id: string;
     email: string;
     status: 'pending' | 'accepted' | 'expired' | 'cancelled';
-    programTitle: string | null;
+    packageTitle: string | null;
     expiresAt: string;
     acceptedAt: string | null;
     createdAt: string;
@@ -50,19 +50,45 @@ export default function Invitations() {
         fetchInvitations();
     }, []);
 
+    const [packages, setPackages] = useState<any[]>([]);
+    const [selectedPackageId, setSelectedPackageId] = useState<string>("");
+
+    useEffect(() => {
+        // Paketleri yükle
+        const fetchPackages = async () => {
+            try {
+                const response = await fetch(apiUrl("api/packages"), {
+                    credentials: "include",
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setPackages(data.packages || []);
+                }
+            } catch (error) {
+                console.error("Paketler yüklenemedi");
+            }
+        };
+        fetchPackages();
+    }, []);
+
     const handleSendInvitation = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         setLoading(true);
 
         try {
+            const payload: any = { email };
+            if (selectedPackageId) {
+                payload.package_id = selectedPackageId;
+            }
+
             const response = await fetch(apiUrl("api/invitations/send"), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify({ email }),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
@@ -73,6 +99,7 @@ export default function Invitations() {
 
             toast.success("Davet başarıyla gönderildi");
             setEmail("");
+            setSelectedPackageId("");
             fetchInvitations();
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Bir hata oluştu";
@@ -203,21 +230,40 @@ export default function Invitations() {
                             <Mail className="h-4 w-4 text-muted-foreground" />
                             E-posta Adresi
                         </Label>
-                        <div className="flex gap-2">
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="ornek@email.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                disabled={loading}
-                                className="flex-1 transition-all"
-                            />
-                            <Button type="submit" disabled={loading} className="gap-2">
-                                <Send className="h-4 w-4" />
-                                {loading ? "Gönderiliyor..." : "Davet Gönder"}
-                            </Button>
+                        <div className="space-y-4">
+                            <div className="flex gap-2">
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="ornek@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    disabled={loading}
+                                    className="flex-1 transition-all"
+                                />
+                                <Button type="submit" disabled={loading} className="gap-2">
+                                    <Send className="h-4 w-4" />
+                                    {loading ? "Gönderiliyor..." : "Davet Gönder"}
+                                </Button>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="package_id" className="text-sm">Paket (Opsiyonel)</Label>
+                                <select
+                                    id="package_id"
+                                    value={selectedPackageId}
+                                    onChange={(e) => setSelectedPackageId(e.target.value)}
+                                    disabled={loading}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                                >
+                                    <option value="">Paket seçmeden davet gönder</option>
+                                    {packages.map((pkg) => (
+                                        <option key={pkg.id} value={pkg.id}>
+                                            {pkg.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                         <p className="text-xs text-muted-foreground">
                             Davet e-postası 7 gün süreyle geçerli olacaktır
@@ -334,9 +380,9 @@ export default function Invitations() {
                                                         {statusInfo.label}
                                                     </span>
                                                 </div>
-                                                {invitation.programTitle && (
+                                                {invitation.packageTitle && (
                                                     <p className="text-sm text-muted-foreground">
-                                                        Program: <span className="font-medium">{invitation.programTitle}</span>
+                                                        Paket: <span className="font-medium">{invitation.packageTitle}</span>
                                                     </p>
                                                 )}
                                             </div>

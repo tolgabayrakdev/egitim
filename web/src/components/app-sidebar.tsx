@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router"
-import { Calendar, Home, Inbox, Search, Settings, User2, LogOut, Bell, UserPlus } from "lucide-react"
+import { Home, Settings, User2, LogOut, Bell, UserPlus, Package, Users, ClipboardList, Activity } from "lucide-react"
 
 import {
   Sidebar,
@@ -32,21 +32,6 @@ const items = [
     title: "Ana Sayfa",
     url: "/",
     icon: Home,
-  },
-  {
-    title: "Gelen Kutusu",
-    url: "/inbox",
-    icon: Inbox,
-  },
-  {
-    title: "Takvim",
-    url: "/calendar",
-    icon: Calendar,
-  },
-  {
-    title: "Ara",
-    url: "/search",
-    icon: Search,
   }
 ]
 
@@ -146,23 +131,130 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 )
               })}
+              <SidebarSeparator />
               {user?.user?.role === 'professional' && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={location.pathname === '/dashboard/invitations'}
-                    className="relative w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent/50"
-                  >
-                    <Link to="/dashboard/invitations" className="flex items-center gap-3">
-                      {location.pathname === '/dashboard/invitations' && (
-                        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-r" />
-                      )}
-                      <UserPlus className={`h-4 w-4 shrink-0 transition-colors ${location.pathname === '/dashboard/invitations' ? 'text-primary' : 'text-muted-foreground'}`} />
-                      <span className="truncate">Davetler</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
+                    Koçluk Yönetimi
+                  </SidebarGroupLabel>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={location.pathname === '/dashboard/packages' || location.pathname.startsWith('/dashboard/packages')}
+                      className="relative w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent/50"
+                    >
+                      <Link to="/dashboard/packages" className="flex items-center gap-3">
+                        {(location.pathname === '/dashboard/packages' || location.pathname.startsWith('/dashboard/packages')) && (
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-r" />
+                        )}
+                        <Package className={`h-4 w-4 shrink-0 transition-colors ${(location.pathname === '/dashboard/packages' || location.pathname.startsWith('/dashboard/packages')) ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="truncate">Paketler</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={location.pathname === '/dashboard/invitations' || location.pathname.startsWith('/dashboard/invitations')}
+                      className="relative w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent/50"
+                    >
+                      <Link to="/dashboard/invitations" className="flex items-center gap-3">
+                        {(location.pathname === '/dashboard/invitations' || location.pathname.startsWith('/dashboard/invitations')) && (
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-r" />
+                        )}
+                        <UserPlus className={`h-4 w-4 shrink-0 transition-colors ${(location.pathname === '/dashboard/invitations' || location.pathname.startsWith('/dashboard/invitations')) ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="truncate">Davetler</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={location.pathname === '/dashboard/coaching' || location.pathname.startsWith('/dashboard/coaching')}
+                      className="relative w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent/50"
+                    >
+                      <Link to="/dashboard/coaching" className="flex items-center gap-3">
+                        {(location.pathname === '/dashboard/coaching' || location.pathname.startsWith('/dashboard/coaching')) && (
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-r" />
+                        )}
+                        <Users className={`h-4 w-4 shrink-0 transition-colors ${(location.pathname === '/dashboard/coaching' || location.pathname.startsWith('/dashboard/coaching')) ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="truncate">Koçluk İlişkileri</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={location.pathname === '/dashboard/tasks' || location.pathname.startsWith('/dashboard/tasks')}
+                      className="relative w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent/50"
+                    >
+                      <Link to="/dashboard/tasks" className="flex items-center gap-3">
+                        {(location.pathname === '/dashboard/tasks' || location.pathname.startsWith('/dashboard/tasks')) && (
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-r" />
+                        )}
+                        <ClipboardList className={`h-4 w-4 shrink-0 transition-colors ${(location.pathname === '/dashboard/tasks' || location.pathname.startsWith('/dashboard/tasks')) ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="truncate">Görevler</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
+              {user?.user?.role === 'participant' && (
+                <>
+                  <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
+                    Koçluk
+                  </SidebarGroupLabel>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={location.pathname === '/dashboard/coaching' || location.pathname.startsWith('/dashboard/coaching')}
+                      className="relative w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent/50"
+                    >
+                      <Link to="/dashboard/coaching" className="flex items-center gap-3">
+                        {(location.pathname === '/dashboard/coaching' || location.pathname.startsWith('/dashboard/coaching')) && (
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-r" />
+                        )}
+                        <Users className={`h-4 w-4 shrink-0 transition-colors ${(location.pathname === '/dashboard/coaching' || location.pathname.startsWith('/dashboard/coaching')) ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="truncate">Koçluk İlişkilerim</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={location.pathname === '/dashboard/tasks' || location.pathname.startsWith('/dashboard/tasks')}
+                      className="relative w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent/50"
+                    >
+                      <Link to="/dashboard/tasks" className="flex items-center gap-3">
+                        {(location.pathname === '/dashboard/tasks' || location.pathname.startsWith('/dashboard/tasks')) && (
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-r" />
+                        )}
+                        <ClipboardList className={`h-4 w-4 shrink-0 transition-colors ${(location.pathname === '/dashboard/tasks' || location.pathname.startsWith('/dashboard/tasks')) ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="truncate">Görevlerim</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
+              )}
+              <SidebarSeparator />
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2">
+                Genel
+              </SidebarGroupLabel>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={location.pathname === '/dashboard/activity-logs' || location.pathname.startsWith('/dashboard/activity-logs')}
+                  className="relative w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent/50"
+                >
+                  <Link to="/dashboard/activity-logs" className="flex items-center gap-3">
+                    {(location.pathname === '/dashboard/activity-logs' || location.pathname.startsWith('/dashboard/activity-logs')) && (
+                      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-r" />
+                    )}
+                    <Activity className={`h-4 w-4 shrink-0 transition-colors ${(location.pathname === '/dashboard/activity-logs' || location.pathname.startsWith('/dashboard/activity-logs')) ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <span className="truncate">Aktivite Logları</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

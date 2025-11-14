@@ -67,3 +67,65 @@ warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T17:
 warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T17:08:00.577Z"}
 warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T17:08:18.166Z"}
 warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T17:08:18.168Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T18:40:01.555Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T18:40:01.559Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T18:46:00.754Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T18:46:00.775Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T18:46:17.061Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T18:46:17.067Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T18:46:17.150Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T18:46:17.151Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:46.694Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:46.696Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.357Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.371Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.530Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.544Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.688Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.697Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:53.826Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:53.830Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:58.796Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:58.820Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:31.084Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:31.099Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:31.182Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:31.183Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:34.345Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:34.349Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:34.417Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:34.421Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:35.641Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:35.644Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:57.648Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:48:57.650Z"}
+warn: POST /api/auth/verify-sms-otp - 400 - Doğrulama kodu hatalı {"timestamp":"2025-11-14T18:49:50.737Z"}
+error: POST /api/invitations/send - 500 - Unexpected socket close {"timestamp":"2025-11-14T18:51:30.632Z"}
+warn: POST /api/invitations/send - 409 - Bu e-posta adresine zaten aktif bir davet gönderilmiş {"timestamp":"2025-11-14T18:52:13.980Z"}
+warn: POST /api/invitations/send - 409 - Bu e-posta adresine zaten aktif bir davet gönderilmiş {"timestamp":"2025-11-14T18:52:23.934Z"}
+warn: POST /api/invitations/send - 409 - Bu e-posta adresine zaten aktif bir davet gönderilmiş {"timestamp":"2025-11-14T18:53:33.278Z"}
+error: POST /api/invitations/accept - 500 - duplicate key value violates unique constraint "users_phone_key" {"timestamp":"2025-11-14T18:59:40.579Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:59:56.587Z"}
+warn: GET /api/auth/me - 404 - Kullanıcı bulunamadı {"timestamp":"2025-11-14T18:59:56.593Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:09.128Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:09.131Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:09.517Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:09.518Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:18.541Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:18.544Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:19.139Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:19.141Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:52.442Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:52.446Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:55.319Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:07:55.321Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:11:07.230Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:11:07.234Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:11:08.387Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:11:08.389Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:11:23.019Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:11:23.022Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:16:15.246Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:16:15.251Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:16:15.335Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-14T19:16:15.336Z"}

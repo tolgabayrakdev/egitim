@@ -7,6 +7,10 @@ import "dotenv/config";
 import authRoutes from "./routes/auth-routes.js";
 import invitationRoutes from "./routes/invitation-routes.js";
 import subscriptionRoutes from "./routes/subscription-routes.js";
+import packageRoutes from "./routes/package-routes.js";
+import coachingRoutes from "./routes/coaching-routes.js";
+import taskRoutes from "./routes/task-routes.js";
+import activityLogRoutes from "./routes/activity-log-routes.js";
 
 import errorHandler from "./middleware/error-handler.js";
 import { apiLimiter } from "./middleware/rate-limiter.js";
@@ -38,6 +42,10 @@ app.use(apiLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/invitations", invitationRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/packages", packageRoutes);
+app.use("/api/coaching", coachingRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/activity-logs", activityLogRoutes);
 
 
 

@@ -8,7 +8,7 @@ export default class InvitationController {
     async sendInvitation(req, res, next) {
         try {
             const invitedBy = req.user.id;
-            const { email, programId } = req.body;
+            const { email, package_id } = req.body;
 
             if (!email) {
                 return res.status(400).json({
@@ -20,7 +20,7 @@ export default class InvitationController {
             const result = await this.invitationService.sendInvitation(
                 invitedBy,
                 email,
-                programId || null
+                package_id || null
             );
 
             res.status(201).json({

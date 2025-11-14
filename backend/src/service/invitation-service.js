@@ -5,7 +5,7 @@ import { sendEmail } from "../util/send-email.js";
 
 export default class InvitationService {
     
-    async sendInvitation(invitedBy, email, programId = null) {
+    async sendInvitation(invitedBy, email, packageId = null) {
         const client = await pool.connect();
         try {
             await client.query("BEGIN");
@@ -46,15 +46,15 @@ export default class InvitationService {
                 throw new HttpException(409, "Bu e-posta adresine zaten aktif bir davet gönderilmiş");
             }
 
-            // Program kontrolü (eğer program_id verilmişse)
-            if (programId) {
-                const programResult = await client.query(
-                    "SELECT id FROM programs WHERE id = $1 AND professional_id = $2",
-                    [programId, invitedBy]
+            // Paket kontrolü (eğer package_id verilmişse)
+            if (packageId) {
+                const packageResult = await client.query(
+                    "SELECT id, title FROM packages WHERE id = $1 AND professional_id = $2",
+                    [packageId, invitedBy]
                 );
 
-                if (programResult.rows.length === 0) {
-                    throw new HttpException(404, "Program bulunamadı veya size ait değil");
+                if (packageResult.rows.length === 0) {
+                    throw new HttpException(404, "Paket bulunamadı veya size ait değil");
                 }
             }
 
@@ -64,10 +64,10 @@ export default class InvitationService {
 
             // Davet kaydı oluştur
             const invitationResult = await client.query(
-                `INSERT INTO invitations (invited_by, program_id, email, token, expires_at)
+                `INSERT INTO invitations (invited_by, package_id, email, token, expires_at)
                  VALUES ($1, $2, $3, $4, $5)
                  RETURNING id, email, token, expires_at, created_at`,
-                [invitedBy, programId, email, token, expiresAt]
+                [invitedBy, packageId, email, token, expiresAt]
             );
 
             const invitation = invitationResult.rows[0];
@@ -121,10 +121,10 @@ export default class InvitationService {
     async getInvitationByToken(token) {
         const result = await pool.query(
             `SELECT i.*, u.first_name as inviter_first_name, u.last_name as inviter_last_name,
-                    p.title as program_title
+                    p.title as package_title
              FROM invitations i
              LEFT JOIN users u ON i.invited_by = u.id
-             LEFT JOIN programs p ON i.program_id = p.id
+             LEFT JOIN packages p ON i.package_id = p.id
              WHERE i.token = $1`,
             [token]
         );
@@ -156,8 +156,8 @@ export default class InvitationService {
             id: invitation.id,
             email: invitation.email,
             inviterName: `${invitation.inviter_first_name} ${invitation.inviter_last_name}`,
-            programTitle: invitation.program_title,
-            programId: invitation.program_id,
+            packageTitle: invitation.package_title,
+            packageId: invitation.package_id,
             expiresAt: invitation.expires_at
         };
     }
@@ -235,14 +235,21 @@ export default class InvitationService {
                 [token]
             );
 
-            // Eğer program_id varsa, program_participants tablosuna ekle
-            if (invitation.program_id) {
-                await client.query(
-                    `INSERT INTO program_participants (program_id, participant_id, status)
-                     VALUES ($1, $2, 'active')
-                     ON CONFLICT (program_id, participant_id) DO NOTHING`,
-                    [invitation.program_id, newUser.id]
+            // Eğer package_id varsa, coaching_relationships tablosuna ekle
+            if (invitation.package_id) {
+                const packageResult = await client.query(
+                    "SELECT professional_id FROM packages WHERE id = $1",
+                    [invitation.package_id]
                 );
+
+                if (packageResult.rows.length > 0) {
+                    await client.query(
+                        `INSERT INTO coaching_relationships (professional_id, participant_id, package_id, status)
+                         VALUES ($1, $2, $3, 'active')
+                         ON CONFLICT (professional_id, participant_id, package_id) DO NOTHING`,
+                        [packageResult.rows[0].professional_id, newUser.id, invitation.package_id]
+                    );
+                }
             }
 
             await client.query("COMMIT");
@@ -264,10 +271,10 @@ export default class InvitationService {
             SELECT i.*, 
                    u.first_name as inviter_first_name, 
                    u.last_name as inviter_last_name,
-                   p.title as program_title
+                   p.title as package_title
             FROM invitations i
             LEFT JOIN users u ON i.invited_by = u.id
-            LEFT JOIN programs p ON i.program_id = p.id
+            LEFT JOIN packages p ON i.package_id = p.id
             WHERE i.invited_by = $1
         `;
         const params = [invitedBy];
@@ -284,7 +291,7 @@ export default class InvitationService {
             id: row.id,
             email: row.email,
             status: row.status,
-            programTitle: row.program_title,
+            packageTitle: row.package_title,
             expiresAt: row.expires_at,
             acceptedAt: row.accepted_at,
             createdAt: row.created_at

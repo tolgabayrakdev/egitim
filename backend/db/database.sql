@@ -26,10 +26,24 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT now()
 );
 
+-- 2. Paketler (1-1 Koçluk Paketleri)
+CREATE TABLE packages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    professional_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    duration_days INT, -- Paket süresi (gün cinsinden)
+    price NUMERIC,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active','inactive')),
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
+);
+
+-- 3. Davetler
 CREATE TABLE invitations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     invited_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- davet eden profesyonel
-    program_id UUID REFERENCES programs(id) ON DELETE CASCADE,       -- davet edilen program
+    package_id UUID REFERENCES packages(id) ON DELETE CASCADE,        -- davet edilen paket
     email VARCHAR(255) NOT NULL,                                    -- davet edilen e-posta
     token VARCHAR(255) UNIQUE NOT NULL,                             -- doğrulama token
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired', 'cancelled')),
@@ -38,62 +52,50 @@ CREATE TABLE invitations (
     created_at TIMESTAMP DEFAULT now()
 );
 
-
-
--- 2. Programlar / Dersler
-CREATE TABLE programs (
+-- 4. Koçluk İlişkileri (1-1 Koçluk)
+CREATE TABLE coaching_relationships (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     professional_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    duration INT,
-    price NUMERIC,
-    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active','inactive')),
-    created_at TIMESTAMP DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now()
-);
-
--- 3. Katılımcılar / Program Katılımları
-CREATE TABLE program_participants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    program_id UUID NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
     participant_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    joined_at TIMESTAMP DEFAULT now(),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('active','completed','cancelled'))
-    CONSTRAINT unique_participant_per_program UNIQUE (program_id, participant_id)
-
-);
-
--- 4. Seans / Ders Takvimi
-CREATE TABLE sessions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    program_id UUID NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP NOT NULL,
-    location VARCHAR(255),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('scheduled','completed','cancelled')),
+    package_id UUID NOT NULL REFERENCES packages(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','completed','cancelled')),
+    started_at TIMESTAMP DEFAULT now(),
+    completed_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now()
+    updated_at TIMESTAMP DEFAULT now(),
+    CONSTRAINT unique_coaching_relationship UNIQUE (professional_id, participant_id, package_id)
 );
 
--- 5. Görev / Ödevler
+-- 5. Görevler / Tasklar
 CREATE TABLE tasks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-    assigned_to UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    coaching_relationship_id UUID NOT NULL REFERENCES coaching_relationships(id) ON DELETE CASCADE,
+    assigned_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- Görevi atayan (professional)
+    assigned_to UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- Görevi alan (participant)
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    due_date DATE,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('pending','completed','overdue')),
-    attachment_url TEXT,
-    grade NUMERIC,
-    feedback TEXT,
+    due_date TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','in_progress','submitted','completed','overdue','cancelled')),
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now()
 );
 
--- 6. Abonelik / Ödeme
+-- 6. Görev Gönderimleri (Task Submissions)
+CREATE TABLE task_submissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    submitted_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- Participant
+    submission_text TEXT,
+    attachment_url TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted','reviewed','approved','needs_revision')),
+    feedback TEXT, -- Professional'dan gelen geri bildirim
+    reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL, -- Professional
+    reviewed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
+);
+
+-- 7. Abonelik / Ödeme
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -106,7 +108,7 @@ CREATE TABLE subscriptions (
     updated_at TIMESTAMP DEFAULT now()
 );
 
--- 7. Aktivite / Loglar
+-- 8. Aktivite / Loglar
 CREATE TABLE activity_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

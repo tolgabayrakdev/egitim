@@ -13,3 +13,17 @@ error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp"
 error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:46:24.820Z"}
 error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:46:33.382Z"}
 error: POST /api/auth/login - 500 - relation "users" does not exist {"timestamp":"2025-11-13T20:46:57.058Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:46.694Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:46.696Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.357Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.371Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.530Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.544Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.688Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:49.697Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:53.826Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:53.830Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:58.796Z"}
+error: GET /api/invitations - 500 - relation "packages" does not exist {"timestamp":"2025-11-14T18:46:58.820Z"}
+error: POST /api/invitations/send - 500 - Unexpected socket close {"timestamp":"2025-11-14T18:51:30.632Z"}
+error: POST /api/invitations/accept - 500 - duplicate key value violates unique constraint "users_phone_key" {"timestamp":"2025-11-14T18:59:40.579Z"}

@@ -67,7 +67,7 @@ export default class AuthService {
             if (!phoneNumber) {
                 throw new HttpException(400, "SMS doğrulaması için kayıtlı bir telefon numarası bulunamadı.");
             }
-            await sendSms({ msg: `RandevuHazır doğrulama kodunuz: ${code}. Kod 3 dakika geçerlidir.`, no: phoneNumber });
+            await sendSms({ msg: `Edivora doğrulama kodunuz: ${code}. Kod 3 dakika geçerlidir.`, no: phoneNumber });
 
             const maskedPhone = phoneNumber.replace(/(\+?\d{0,3})?(\d{2})(\d+)(\d{2})$/, (_m, cc = "", p2, mid, p4) => {
                 return `${cc || ""}${p2}${"*".repeat(mid.length)}${p4}`;
@@ -76,8 +76,8 @@ export default class AuthService {
             return { smsRequired: true, email: user.email, maskedPhone };
         }
 
-        const accessToken = generateAccessToken({ id: user.id, role: "user" });
-        const refreshToken = generateRefreshToken({ id: user.id, role: "user" });
+        const accessToken = generateAccessToken({ id: user.id, role: user.role });
+        const refreshToken = generateRefreshToken({ id: user.id, role: user.role });
         return { accessToken, refreshToken };
     }
 
@@ -531,8 +531,8 @@ export default class AuthService {
         );
 
         // After SMS verification, generate tokens
-        const accessToken = generateAccessToken({ id: user.id, role: "user" });
-        const refreshToken = generateRefreshToken({ id: user.id, role: "user" });
+        const accessToken = generateAccessToken({ id: user.id, role: user.role });
+        const refreshToken = generateRefreshToken({ id: user.id, role: user.role });
         
         return { 
             message: "SMS başarıyla doğrulandı",
@@ -589,7 +589,7 @@ export default class AuthService {
         if (!phoneNumber) {
             throw new HttpException(400, "SMS doğrulaması için kayıtlı bir telefon numarası bulunamadı.");
         }
-        await sendSms({ msg: `RandevuHazır doğrulama kodunuz: ${newCode}. Kod 3 dakika geçerlidir.`, no: phoneNumber });
+        await sendSms({ msg: `Edivora doğrulama kodunuz: ${newCode}. Kod 3 dakika geçerlidir.`, no: phoneNumber });
 
         return { message: "Yeni bir SMS doğrulama kodu gönderildi." };
     }
