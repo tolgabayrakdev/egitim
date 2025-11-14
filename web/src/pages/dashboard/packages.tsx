@@ -168,11 +168,11 @@ export default function Packages() {
     }
 
     return (
-        <div className="space-y-8 p-6">
+        <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                    <h1 className="text-3xl font-bold tracking-tight">Paketler</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Paketler</h1>
                     <p className="text-muted-foreground">
                         Koçluk paketlerinizi oluşturun ve yönetin. Bu paketleri davet ettiğiniz katılımcılara atayabilirsiniz.
                     </p>
@@ -184,7 +184,7 @@ export default function Packages() {
                             Yeni Paket
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-[95vw] sm:max-w-2xl">
                         <DialogHeader>
                             <DialogTitle>{editingPackage ? "Paketi Düzenle" : "Yeni Paket Oluştur"}</DialogTitle>
                             <DialogDescription>
@@ -212,7 +212,7 @@ export default function Packages() {
                                     rows={4}
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="duration_days">Süre (Gün)</Label>
                                     <Input
@@ -278,17 +278,17 @@ export default function Packages() {
                     </Button>
                 </div>
             ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {packages.map((pkg) => (
                         <div
                             key={pkg.id}
-                            className="p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-4"
+                            className="p-4 sm:p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-4"
                         >
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <Package className="h-5 w-5 text-primary" />
-                                        <h3 className="font-semibold text-lg">{pkg.title}</h3>
+                                        <Package className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                                        <h3 className="font-semibold text-base sm:text-lg truncate">{pkg.title}</h3>
                                     </div>
                                     {pkg.status === 'active' ? (
                                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">

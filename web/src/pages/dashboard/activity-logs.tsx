@@ -139,10 +139,10 @@ export default function ActivityLogs() {
     }
 
     return (
-        <div className="space-y-8 p-6">
+        <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
             {/* Header */}
             <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">Aktivite Logları</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Aktivite Logları</h1>
                 <p className="text-muted-foreground">
                     Sistemdeki tüm aktivitelerinizi görüntüleyin
                 </p>
@@ -152,7 +152,7 @@ export default function ActivityLogs() {
 
             {/* Filtreler - Sadece profesyonel için */}
             {isProfessional && logs.length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 flex-wrap">
                     <Filter className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">Filtrele:</span>
                     <Button
@@ -211,15 +211,15 @@ export default function ActivityLogs() {
                         return (
                             <div
                                 key={log.id}
-                                className="p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-3"
+                                className="p-4 sm:p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-3"
                             >
-                                <div className="flex items-start gap-4">
-                                    <div className="rounded-lg bg-primary/10 p-2">
-                                        <ActionIcon className="h-5 w-5 text-primary" />
+                                <div className="flex items-start gap-3 sm:gap-4">
+                                    <div className="rounded-lg bg-primary/10 p-2 flex-shrink-0">
+                                        <ActionIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                                     </div>
-                                    <div className="flex-1 space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-semibold text-lg">
+                                    <div className="flex-1 space-y-2 min-w-0">
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                            <h3 className="font-semibold text-base sm:text-lg truncate">
                                                 {getActionLabel(log.action_type)}
                                             </h3>
                                             <span className="px-2 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">

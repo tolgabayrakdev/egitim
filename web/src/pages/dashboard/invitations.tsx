@@ -191,10 +191,10 @@ export default function Invitations() {
     }
 
     return (
-        <div className="space-y-8 p-6">
+        <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
             {/* Header */}
             <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">Davetler</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Davetler</h1>
                 <p className="text-muted-foreground">
                     Kullanıcıları sisteme davet edin ve gönderdiğiniz davetlerin durumunu takip edin.
                 </p>
@@ -365,16 +365,16 @@ export default function Invitations() {
                             return (
                                 <div
                                     key={invitation.id}
-                                    className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                                    className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                                 >
-                                    <div className="flex-1 space-y-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="rounded-lg bg-muted p-2">
+                                    <div className="flex-1 space-y-3 min-w-0">
+                                        <div className="flex items-start gap-3">
+                                            <div className="rounded-lg bg-muted p-2 flex-shrink-0">
                                                 <Mail className="h-4 w-4 text-muted-foreground" />
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="font-medium text-base">{invitation.email}</span>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                                                    <span className="font-medium text-sm sm:text-base truncate">{invitation.email}</span>
                                                     <span className={`px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 ${statusInfo.color}`}>
                                                         <StatusIcon className={`h-3 w-3 ${statusInfo.iconColor}`} />
                                                         {statusInfo.label}
@@ -388,7 +388,7 @@ export default function Invitations() {
                                             </div>
                                         </div>
                                         
-                                        <div className="flex items-center gap-4 text-xs text-muted-foreground pl-12">
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-muted-foreground pl-0 sm:pl-12">
                                             <div className="flex items-center gap-1">
                                                 <Calendar className="h-3 w-3" />
                                                 <span>Gönderilme: {createdAt.toLocaleDateString("tr-TR")} {createdAt.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span>
@@ -413,7 +413,7 @@ export default function Invitations() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => handleCancelInvitation(invitation.id)}
-                                            className="gap-2 ml-4"
+                                            className="gap-2 w-full sm:w-auto sm:ml-4"
                                         >
                                             <X className="h-4 w-4" />
                                             İptal Et

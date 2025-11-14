@@ -182,19 +182,19 @@ export default function DashboardIndex() {
     }
 
     return (
-        <div className="space-y-8 p-6">
+        <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
             {/* Header */}
             <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-bold tracking-tight">Hoş Geldiniz</h1>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Hoş Geldiniz</h1>
                     <Badge 
                         variant={user.role === 'professional' ? 'default' : 'secondary'}
-                        className="text-sm px-3 py-1"
+                        className="text-sm px-3 py-1 w-fit"
                     >
                         {user.role === 'professional' ? 'Profesyonel' : 'Katılımcı'}
                     </Badge>
                 </div>
-                <p className="text-muted-foreground">
+                <p className="text-sm sm:text-base text-muted-foreground">
                     {user.first_name} {user.last_name}, Edivora sistemine hoş geldiniz.
                 </p>
             </div>
@@ -218,9 +218,9 @@ export default function DashboardIndex() {
                 <Separator />
                 
                 {loadingStats ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         {[...Array(4)].map((_, i) => (
-                            <Card key={i} className="animate-pulse">
+                            <Card key={i} className="animate-pulse bg-transparent border shadow-none">
                                 <CardHeader className="space-y-0 pb-2">
                                     <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
                                     <div className="h-8 bg-muted rounded w-1/2"></div>
@@ -229,11 +229,11 @@ export default function DashboardIndex() {
                         ))}
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Profesyonel için istatistikler */}
                     {isProfessional ? (
                         <>
-                            <Card>
+                            <Card className="bg-transparent border shadow-none">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">
                                         Toplam Koçluk İlişkileri
@@ -248,7 +248,7 @@ export default function DashboardIndex() {
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="bg-transparent border shadow-none">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">
                                         Toplam Görevler
@@ -263,7 +263,7 @@ export default function DashboardIndex() {
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="bg-transparent border shadow-none">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">
                                         Bekleyen Görevler
@@ -278,7 +278,7 @@ export default function DashboardIndex() {
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="bg-transparent border shadow-none">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">
                                         Toplam Paketler
@@ -296,7 +296,7 @@ export default function DashboardIndex() {
                     ) : (
                         <>
                             {/* Participant için istatistikler */}
-                            <Card>
+                            <Card className="bg-transparent border shadow-none">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">
                                         Aktif Koçluk İlişkileri
@@ -311,7 +311,7 @@ export default function DashboardIndex() {
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="bg-transparent border shadow-none">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">
                                         Atanan Görevler
@@ -326,7 +326,7 @@ export default function DashboardIndex() {
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="bg-transparent border shadow-none">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">
                                         Tamamlanan Görevler
@@ -341,7 +341,7 @@ export default function DashboardIndex() {
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="bg-transparent border shadow-none">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">
                                         Gönderilen Görevler
@@ -362,7 +362,7 @@ export default function DashboardIndex() {
             </div>
 
             {/* Hızlı İşlemler & Son Aktiviteler */}
-            <div className="grid gap-8 md:grid-cols-2">
+            <div className="grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2">
                 {/* Quick Actions */}
                 <div className="space-y-6">
                     <div className="flex items-center gap-3">
@@ -415,7 +415,7 @@ export default function DashboardIndex() {
                                         Görevlerimi Görüntüle
                                     </Link>
                                 </Button>
-                                <Button asChild variant="outline" className="w-full justify-start">
+                                <Button asChild variant="outline" className="w-full justify-start text-sm sm:text-base">
                                     <Link to="/dashboard/coaching">
                                         <Users className="mr-2 h-4 w-4" />
                                         Koçluk İlişkilerim

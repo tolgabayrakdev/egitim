@@ -185,11 +185,11 @@ export default function Coaching() {
     const isProfessional = userRole === 'professional';
 
     return (
-        <div className="space-y-8 p-6">
+        <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                    <h1 className="text-3xl font-bold tracking-tight">Koçluk İlişkileri</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Koçluk İlişkileri</h1>
                     <p className="text-muted-foreground">
                         {isProfessional 
                             ? "Katılımcılarınızla olan koçluk ilişkilerinizi görüntüleyin ve yönetin"
@@ -204,7 +204,7 @@ export default function Coaching() {
                                 Yeni İlişki
                             </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-w-[95vw] sm:max-w-md">
                             <DialogHeader>
                                 <DialogTitle>Yeni Koçluk İlişkisi Oluştur</DialogTitle>
                                 <DialogDescription>
@@ -281,17 +281,17 @@ export default function Coaching() {
                         return (
                             <div
                                 key={relationship.id}
-                                className="p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-4"
+                                className="p-4 sm:p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-4"
                             >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1 space-y-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="rounded-lg bg-primary/10 p-2">
-                                                <Users className="h-5 w-5 text-primary" />
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                    <div className="flex-1 space-y-3 min-w-0">
+                                        <div className="flex items-start gap-3">
+                                            <div className="rounded-lg bg-primary/10 p-2 flex-shrink-0">
+                                                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <h3 className="font-semibold text-lg">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                                                    <h3 className="font-semibold text-base sm:text-lg truncate">
                                                         {isProfessional
                                                             ? `${relationship.participant_first_name || ''} ${relationship.participant_last_name || ''}`.trim() || relationship.participant_email
                                                             : `${relationship.professional_first_name || ''} ${relationship.professional_last_name || ''}`.trim() || relationship.professional_email}
@@ -301,13 +301,13 @@ export default function Coaching() {
                                                         {statusInfo.label}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                                                     <div className="flex items-center gap-1">
-                                                        <Package className="h-4 w-4" />
-                                                        <span>{relationship.package_title}</span>
+                                                        <Package className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                        <span className="truncate">{relationship.package_title}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1">
-                                                        <Calendar className="h-4 w-4" />
+                                                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                                                         <span>Başlangıç: {startedAt.toLocaleDateString("tr-TR")}</span>
                                                     </div>
                                                 </div>
@@ -318,6 +318,7 @@ export default function Coaching() {
                                         variant="outline"
                                         size="sm"
                                         onClick={() => window.location.href = `/dashboard/tasks?relationship=${relationship.id}`}
+                                        className="w-full sm:w-auto"
                                     >
                                         Görevleri Görüntüle
                                     </Button>

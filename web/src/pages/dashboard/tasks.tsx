@@ -286,11 +286,11 @@ export default function Tasks() {
     const isProfessional = userRole === 'professional';
 
     return (
-        <div className="space-y-8 p-6">
+        <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                    <h1 className="text-3xl font-bold tracking-tight">Görevler</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Görevler</h1>
                     <p className="text-muted-foreground">
                         {isProfessional 
                             ? "Katılımcılarınıza görev atayın ve takip edin"
@@ -305,7 +305,7 @@ export default function Tasks() {
                                 Yeni Görev
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
+                        <DialogContent className="max-w-[95vw] sm:max-w-2xl">
                             <DialogHeader>
                                 <DialogTitle>Yeni Görev Oluştur</DialogTitle>
                                 <DialogDescription>
@@ -399,17 +399,17 @@ export default function Tasks() {
                         return (
                             <div
                                 key={task.id}
-                                className="p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-4"
+                                className="p-4 sm:p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-4"
                             >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1 space-y-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="rounded-lg bg-primary/10 p-2">
-                                                <ClipboardList className="h-5 w-5 text-primary" />
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                    <div className="flex-1 space-y-3 min-w-0">
+                                        <div className="flex items-start gap-3">
+                                            <div className="rounded-lg bg-primary/10 p-2 flex-shrink-0">
+                                                <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <h3 className="font-semibold text-lg">{task.title}</h3>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                                                    <h3 className="font-semibold text-base sm:text-lg truncate">{task.title}</h3>
                                                     <span className={`px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 ${statusInfo.color}`}>
                                                         <StatusIcon className="h-3 w-3" />
                                                         {statusInfo.label}
@@ -420,10 +420,10 @@ export default function Tasks() {
                                                         {task.description}
                                                     </p>
                                                 )}
-                                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs text-muted-foreground">
                                                     <span>Oluşturulma: {createdDate.toLocaleDateString("tr-TR")}</span>
                                                     {dueDate && (
-                                                        <span>Son Tarih: {dueDate.toLocaleDateString("tr-TR")} {dueDate.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span>
+                                                        <span className="truncate">Son Tarih: {dueDate.toLocaleDateString("tr-TR")} {dueDate.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span>
                                                     )}
                                                     {task.submission_count !== undefined && task.submission_count > 0 && (
                                                         <span className="flex items-center gap-1">
@@ -435,23 +435,26 @@ export default function Tasks() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
                                         {isProfessional ? (
                                             <>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => handleViewSubmissions(task.id)}
+                                                    className="flex-1 sm:flex-initial"
                                                 >
-                                                    <FileText className="h-4 w-4" />
+                                                    <FileText className="h-4 w-4 sm:mr-0" />
+                                                    <span className="sm:hidden ml-1">Görüntüle</span>
                                                 </Button>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => handleDeleteTask(task.id)}
-                                                    className="text-destructive hover:text-destructive"
+                                                    className="text-destructive hover:text-destructive flex-1 sm:flex-initial"
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <Trash2 className="h-4 w-4 sm:mr-0" />
+                                                    <span className="sm:hidden ml-1">Sil</span>
                                                 </Button>
                                             </>
                                         ) : (
@@ -463,7 +466,7 @@ export default function Tasks() {
                                                         setSelectedTask(task);
                                                         setIsSubmissionDialogOpen(true);
                                                     }}
-                                                    className="gap-2"
+                                                    className="gap-2 w-full sm:w-auto"
                                                 >
                                                     <Send className="h-4 w-4" />
                                                     Gönder
