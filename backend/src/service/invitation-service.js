@@ -10,9 +10,9 @@ export default class InvitationService {
         try {
             await client.query("BEGIN");
 
-            // Davet eden kullanıcının profesyonel olduğunu kontrol et
+            // Davet eden kullanıcıyı kontrol et
             const inviterResult = await client.query(
-                "SELECT id, role, first_name, last_name FROM users WHERE id = $1",
+                "SELECT id, first_name, last_name FROM users WHERE id = $1",
                 [invitedBy]
             );
 
@@ -21,9 +21,6 @@ export default class InvitationService {
             }
 
             const inviter = inviterResult.rows[0];
-            if (inviter.role !== 'professional') {
-                throw new HttpException(403, "Sadece profesyonel kullanıcılar davet gönderebilir");
-            }
 
             // E-posta adresinin zaten kayıtlı olup olmadığını kontrol et
             const existingUser = await client.query(
@@ -46,17 +43,8 @@ export default class InvitationService {
                 throw new HttpException(409, "Bu e-posta adresine zaten aktif bir davet gönderilmiş");
             }
 
-            // Paket kontrolü (eğer package_id verilmişse)
-            if (packageId) {
-                const packageResult = await client.query(
-                    "SELECT id, title FROM packages WHERE id = $1 AND professional_id = $2",
-                    [packageId, invitedBy]
-                );
-
-                if (packageResult.rows.length === 0) {
-                    throw new HttpException(404, "Paket bulunamadı veya size ait değil");
-                }
-            }
+            // Package artık yok, packageId'yi null yap
+            packageId = null;
 
             // Token oluştur
             const token = randomUUID();
@@ -120,11 +108,9 @@ export default class InvitationService {
 
     async getInvitationByToken(token) {
         const result = await pool.query(
-            `SELECT i.*, u.first_name as inviter_first_name, u.last_name as inviter_last_name,
-                    p.title as package_title
+            `SELECT i.*, u.first_name as inviter_first_name, u.last_name as inviter_last_name
              FROM invitations i
              LEFT JOIN users u ON i.invited_by = u.id
-             LEFT JOIN packages p ON i.package_id = p.id
              WHERE i.token = $1`,
             [token]
         );
@@ -156,8 +142,6 @@ export default class InvitationService {
             id: invitation.id,
             email: invitation.email,
             inviterName: `${invitation.inviter_first_name} ${invitation.inviter_last_name}`,
-            packageTitle: invitation.package_title,
-            packageId: invitation.package_id,
             expiresAt: invitation.expires_at
         };
     }
@@ -207,17 +191,16 @@ export default class InvitationService {
 
             const newUserResult = await client.query(
                 `INSERT INTO users (
-                    email, password, first_name, last_name, phone, role, specialty,
+                    email, password, first_name, last_name, phone, specialty,
                     is_email_verified, is_sms_verified, is_verified
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                RETURNING id, email, first_name, last_name, role`,
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING id, email, first_name, last_name`,
                 [
                     userData.email,
                     hashedPassword,
                     userData.first_name,
                     userData.last_name,
                     userData.phone,
-                    'participant', // Davet edilenler her zaman participant olur
                     null, // Specialty - davet ile gelen kullanıcılar için null
                     true, // is_email_verified - davet ile geldiği için otomatik doğrulanmış
                     true, // is_sms_verified - davet ile geldiği için otomatik doğrulanmış
@@ -235,22 +218,7 @@ export default class InvitationService {
                 [token]
             );
 
-            // Eğer package_id varsa, coaching_relationships tablosuna ekle
-            if (invitation.package_id) {
-                const packageResult = await client.query(
-                    "SELECT professional_id FROM packages WHERE id = $1",
-                    [invitation.package_id]
-                );
-
-                if (packageResult.rows.length > 0) {
-                    await client.query(
-                        `INSERT INTO coaching_relationships (professional_id, participant_id, package_id, status)
-                         VALUES ($1, $2, $3, 'active')
-                         ON CONFLICT (professional_id, participant_id, package_id) DO NOTHING`,
-                        [packageResult.rows[0].professional_id, newUser.id, invitation.package_id]
-                    );
-                }
-            }
+            // Package ve coaching_relationships artık yok, bu kısım kaldırıldı
 
             await client.query("COMMIT");
 
@@ -270,11 +238,9 @@ export default class InvitationService {
         let query = `
             SELECT i.*, 
                    u.first_name as inviter_first_name, 
-                   u.last_name as inviter_last_name,
-                   p.title as package_title
+                   u.last_name as inviter_last_name
             FROM invitations i
             LEFT JOIN users u ON i.invited_by = u.id
-            LEFT JOIN packages p ON i.package_id = p.id
             WHERE i.invited_by = $1
         `;
         const params = [invitedBy];
@@ -291,7 +257,6 @@ export default class InvitationService {
             id: row.id,
             email: row.email,
             status: row.status,
-            packageTitle: row.package_title,
             expiresAt: row.expires_at,
             acceptedAt: row.accepted_at,
             createdAt: row.created_at

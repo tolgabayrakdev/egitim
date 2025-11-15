@@ -12,7 +12,6 @@ export default function SignUp() {
         email: "",
         phone: "",
         password: "",
-        role: "professional" as "professional",
         specialty: "",
     });
     const [loading, setLoading] = useState(false);
@@ -69,11 +68,7 @@ export default function SignUp() {
         setError("");
         setSuccess(false);
 
-        // Specialty zorunlu
-        if (!formData.specialty.trim()) {
-            setError("Uzmanlık alanı zorunludur");
-            return;
-        }
+        // Specialty artık opsiyonel
 
         // Telefon numarası validasyonu (10 haneli olmalı)
         if (formData.phone.length !== 10) {
@@ -93,7 +88,6 @@ export default function SignUp() {
                 email: formData.email,
                 phone: fullPhone,
                 password: formData.password,
-                role: formData.role,
                 specialty: formData.specialty,
             };
 
@@ -145,9 +139,9 @@ export default function SignUp() {
                             className="h-20 w-auto"
                         />
                     </div>
-                    <h1 className="text-2xl font-semibold">Profesyonel Kayıt</h1>
+                    <h1 className="text-2xl font-semibold">Kayıt Ol</h1>
                     <p className="text-sm text-muted-foreground">
-                        Profesyonel hesap oluşturmak için bilgilerinizi girin
+                        Hesap oluşturmak için bilgilerinizi girin
                     </p>
                 </div>
                 {success ? (
@@ -235,7 +229,7 @@ export default function SignUp() {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="specialty">Uzmanlık Alanı</Label>
+                        <Label htmlFor="specialty">Uzmanlık Alanı (Opsiyonel)</Label>
                         <Input
                             id="specialty"
                             name="specialty"
@@ -243,7 +237,6 @@ export default function SignUp() {
                             placeholder="Örn: Psikoloji, Eğitim, Koçluk"
                             value={formData.specialty}
                             onChange={handleChange}
-                            required
                             disabled={loading}
                         />
                     </div>

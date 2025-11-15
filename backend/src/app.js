@@ -5,9 +5,7 @@ import cookieParser from "cookie-parser";
 import "dotenv/config";
 
 import authRoutes from "./routes/auth-routes.js";
-import invitationRoutes from "./routes/invitation-routes.js";
 import subscriptionRoutes from "./routes/subscription-routes.js";
-import activityLogRoutes from "./routes/activity-log-routes.js";
 
 import errorHandler from "./middleware/error-handler.js";
 import { apiLimiter } from "./middleware/rate-limiter.js";
@@ -37,9 +35,7 @@ app.use(apiLimiter);
 
 
 app.use("/api/auth", authRoutes);
-app.use("/api/invitations", invitationRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
-app.use("/api/activity-logs", activityLogRoutes);
 
 
 

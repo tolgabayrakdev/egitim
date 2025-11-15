@@ -76,8 +76,8 @@ export default class AuthService {
             return { smsRequired: true, email: user.email, maskedPhone };
         }
 
-        const accessToken = generateAccessToken({ id: user.id, role: user.role });
-        const refreshToken = generateRefreshToken({ id: user.id, role: user.role });
+        const accessToken = generateAccessToken({ id: user.id });
+        const refreshToken = generateRefreshToken({ id: user.id });
         return { accessToken, refreshToken };
     }
 
@@ -85,16 +85,6 @@ export default class AuthService {
         const client = await pool.connect();
         try {
             await client.query("BEGIN");
-
-            // Sadece profesyoneller kayıt olabilir
-            if (user.role !== 'professional') {
-                throw new HttpException(400, "Sadece profesyoneller kayıt olabilir. Katılımcılar davet linki ile sisteme girebilir.");
-            }
-
-            // Specialty zorunlu
-            if (!user.specialty || !user.specialty.trim()) {
-                throw new HttpException(400, "Uzmanlık alanı zorunludur");
-            }
 
             const existingUser = await client.query("SELECT * FROM users WHERE email = $1", [
                 user.email,
@@ -122,9 +112,8 @@ export default class AuthService {
                     first_name,
                     last_name,
                     phone,
-                    role,
                     specialty
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ) VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id
                 `,
                 [
@@ -133,8 +122,7 @@ export default class AuthService {
                     user.first_name,
                     user.last_name,
                     user.phone,
-                    user.role,
-                    user.specialty
+                    user.specialty || null
                 ]
             );
             await client.query("COMMIT");
@@ -411,7 +399,7 @@ export default class AuthService {
                     UPDATE users 
                     SET ${updateFields.join(", ")}
                     WHERE id = $${paramIndex}
-                    RETURNING id, first_name, last_name, email, phone, bio, specialty, role, created_at, updated_at
+                    RETURNING id, first_name, last_name, email, phone, bio, specialty, created_at, updated_at
                 `;
 
                 const result = await client.query(query, updateValues);
@@ -531,8 +519,8 @@ export default class AuthService {
         );
 
         // After SMS verification, generate tokens
-        const accessToken = generateAccessToken({ id: user.id, role: user.role });
-        const refreshToken = generateRefreshToken({ id: user.id, role: user.role });
+        const accessToken = generateAccessToken({ id: user.id });
+        const refreshToken = generateRefreshToken({ id: user.id });
         
         return { 
             message: "SMS başarıyla doğrulandı",

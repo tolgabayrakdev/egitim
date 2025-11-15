@@ -185,3 +185,7 @@ warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-15T14:
 warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-15T14:40:22.222Z"}
 warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-15T14:40:22.326Z"}
 warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-15T14:40:22.329Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-15T16:11:24.835Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-15T16:11:24.843Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-15T16:11:24.923Z"}
+warn: GET /api/auth/me - 401 - Oturum açılmamış {"timestamp":"2025-11-15T16:11:24.924Z"}

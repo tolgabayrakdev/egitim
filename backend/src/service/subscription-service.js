@@ -29,9 +29,9 @@ export default class SubscriptionService {
     }
 
     async checkSubscriptionRequired(userId) {
-        // Kullanıcının rolünü kontrol et
+        // Kullanıcıyı kontrol et
         const userResult = await pool.query(
-            "SELECT role FROM users WHERE id = $1",
+            "SELECT id FROM users WHERE id = $1",
             [userId]
         );
 
@@ -39,18 +39,11 @@ export default class SubscriptionService {
             throw new HttpException(404, "Kullanıcı bulunamadı");
         }
 
-        const user = userResult.rows[0];
-
-        // Sadece profesyonel kullanıcılar için subscription gerekli
-        if (user.role !== 'professional') {
-            return { required: false };
-        }
-
         // Aktif subscription var mı kontrol et
         const subscription = await this.getUserSubscription(userId);
 
         return {
-            required: true,
+            required: false,
             hasSubscription: subscription !== null,
             subscription: subscription
         };
@@ -61,18 +54,14 @@ export default class SubscriptionService {
         try {
             await client.query("BEGIN");
 
-            // Kullanıcının profesyonel olduğunu kontrol et
+            // Kullanıcıyı kontrol et
             const userResult = await client.query(
-                "SELECT role FROM users WHERE id = $1",
+                "SELECT id FROM users WHERE id = $1",
                 [userId]
             );
 
             if (userResult.rows.length === 0) {
                 throw new HttpException(404, "Kullanıcı bulunamadı");
-            }
-
-            if (userResult.rows[0].role !== 'professional') {
-                throw new HttpException(403, "Sadece profesyonel kullanıcılar abonelik oluşturabilir");
             }
 
             // Plan kontrolü

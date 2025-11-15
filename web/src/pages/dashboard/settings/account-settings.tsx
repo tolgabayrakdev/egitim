@@ -8,9 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { User, Lock, Trash2, Edit2, Mail, Phone, FileText, Briefcase, Save, X, Shield } from "lucide-react";
+import { User, Lock, Trash2, Edit2, Mail, Phone, FileText, Briefcase, Save, X } from "lucide-react";
 
 interface User {
     id: string;
@@ -20,7 +19,6 @@ interface User {
     phone: string;
     bio?: string;
     specialty?: string;
-    role: string;
 }
 
 export default function AccountSettings() {
@@ -266,17 +264,7 @@ export default function AccountSettings() {
         <div className="space-y-8 p-6">
             {/* Header */}
             <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-bold tracking-tight">Hesap Ayarları</h1>
-                    {user.role && (
-                        <Badge 
-                            variant={user.role === 'professional' ? 'default' : 'secondary'}
-                            className="text-sm px-3 py-1"
-                        >
-                            {user.role === 'professional' ? 'Profesyonel' : 'Katılımcı'}
-                        </Badge>
-                    )}
-                </div>
+                <h1 className="text-3xl font-bold tracking-tight">Hesap Ayarları</h1>
                 <p className="text-muted-foreground">
                     Hesap bilgilerinizi ve güvenlik ayarlarınızı buradan yönetebilirsiniz.
                 </p>
@@ -346,24 +334,6 @@ export default function AccountSettings() {
                 <Separator />
                 
                 <form id="user-form" onSubmit={handleUpdateUser} className="space-y-6">
-                    <div className="space-y-2 mb-6">
-                        <Label className="text-sm font-medium flex items-center gap-2">
-                            <Shield className="h-4 w-4 text-muted-foreground" />
-                            Hesap Rolü
-                        </Label>
-                        <div className="flex items-center gap-2">
-                            <Badge 
-                                variant={user.role === 'professional' ? 'default' : 'secondary'}
-                                className="text-sm px-3 py-1"
-                            >
-                                {user.role === 'professional' ? 'Profesyonel' : 'Katılımcı'}
-                            </Badge>
-                            <p className="text-xs text-muted-foreground">
-                                Hesap rolü değiştirilemez
-                            </p>
-                        </div>
-                    </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label htmlFor="first_name" className="text-sm font-medium">
@@ -428,24 +398,22 @@ export default function AccountSettings() {
                         </div>
                     </div>
 
-                    {user.role === "professional" && (
-                        <div className="space-y-2">
-                            <Label htmlFor="specialty" className="text-sm font-medium flex items-center gap-2">
-                                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                                Uzmanlık Alanı
-                            </Label>
-                            <Input
-                                id="specialty"
-                                value={formData.specialty}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, specialty: e.target.value })
-                                }
-                                disabled={!isEditing}
-                                placeholder="Örn: Psikoloji, Eğitim, vb."
-                                className="transition-all"
-                            />
-                        </div>
-                    )}
+                    <div className="space-y-2">
+                        <Label htmlFor="specialty" className="text-sm font-medium flex items-center gap-2">
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                            Uzmanlık Alanı
+                        </Label>
+                        <Input
+                            id="specialty"
+                            value={formData.specialty}
+                            onChange={(e) =>
+                                setFormData({ ...formData, specialty: e.target.value })
+                            }
+                            disabled={!isEditing}
+                            placeholder="Örn: Psikoloji, Eğitim, vb."
+                            className="transition-all"
+                        />
+                    </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="bio" className="text-sm font-medium flex items-center gap-2">

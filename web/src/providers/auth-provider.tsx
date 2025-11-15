@@ -33,24 +33,7 @@ function AuthProvider({ children }: AuthProviderProps) {
             if (res.status === 200) {
                 const userData = await res.json();
                 
-                // Profesyonel kullanıcılar için subscription kontrolü
-                if (userData.user?.role === 'professional') {
-                    const subscriptionRes = await fetch(apiUrl('/api/subscriptions/check'), {
-                        method: 'GET',
-                        credentials: 'include',
-                        signal: controller.signal,
-                    });
-                    
-                    if (subscriptionRes.ok) {
-                        const subscriptionData = await subscriptionRes.json();
-                        
-                        if (subscriptionData.required && !subscriptionData.hasSubscription) {
-                            setLoading(false);
-                            setNeedsSubscription(true);
-                            return;
-                        }
-                    }
-                }
+                // Subscription kontrolü artık gerekli değil
                 
                 setLoading(false);
                 setRateLimited(false);

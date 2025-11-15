@@ -40,26 +40,7 @@ export default class AuthController {
 
     async register(req, res, next) {
         try {
-            const { first_name, last_name, email, phone, password, role, specialty } = req.body;
-
-            // Sadece profesyoneller kayıt olabilir
-            if (role && role !== 'professional') {
-                return res.status(400).json({
-                    success: false,
-                    message: "Sadece profesyoneller kayıt olabilir. Katılımcılar davet linki ile sisteme girebilir."
-                });
-            }
-
-            // Role'ü professional olarak sabitle
-            const userRole = 'professional';
-
-            // Specialty zorunlu
-            if (!specialty || !specialty.trim()) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Uzmanlık alanı zorunludur"
-                });
-            }
+            const { first_name, last_name, email, phone, password, specialty } = req.body;
 
             const result = await this.authService.register({
                 first_name,
@@ -67,8 +48,7 @@ export default class AuthController {
                 email,
                 phone,
                 password,
-                role: userRole,
-                specialty: specialty.trim(),
+                specialty: specialty ? specialty.trim() : null,
             });
             res.status(201).json({
                 success: true,

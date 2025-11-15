@@ -3,15 +3,11 @@ import DashboardLayout from "@/layouts/dashboard-layout"
 import DashboardIndex from "@/pages/dashboard/index"
 import AccountSettings from "@/pages/dashboard/settings/account-settings"
 import NotificationSettings from "@/pages/dashboard/settings/notification-settings"
-import Invitations from "@/pages/dashboard/invitations"
 
-import ParticipantDetail from "@/pages/dashboard/participant-detail"
-import ActivityLogs from "@/pages/dashboard/activity-logs"
 
 import SignIn from "@/pages/auth/sign-in"
 import SignUp from "@/pages/auth/sign-up"
 import ForgotPassword from "@/pages/auth/forgot-password"
-import AcceptInvitation from "@/pages/auth/accept-invitation"
 import SubscriptionPage from "@/pages/subscription/index"
 import PaymentPage from "@/pages/subscription/payment"
 
@@ -31,19 +27,7 @@ export const router = createBrowserRouter([
             {
                 path: '/dashboard/settings/notifications',
                 element: <NotificationSettings />
-            },
-            {
-                path: '/dashboard/invitations',
-                element: <Invitations />
-            },
-            {
-                path: '/dashboard/coaching/:slug',
-                element: <ParticipantDetail />
-            },
-            {
-                path: '/dashboard/activity-logs',
-                element: <ActivityLogs />
-            },
+            }
         ]
 
     },
@@ -58,10 +42,6 @@ export const router = createBrowserRouter([
     {
         path: '/forgot-password',
         element: <ForgotPassword />
-    },
-    {
-        path: '/accept-invitation',
-        element: <AcceptInvitation />
     },
     {
         path: '/subscription',
