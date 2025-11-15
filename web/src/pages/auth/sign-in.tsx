@@ -436,8 +436,8 @@ export default function SignIn() {
                 <div className="text-center space-y-4">
                     <div className="flex justify-center mb-6">
                         <img 
-                            src="/logo.png" 
-                            alt="EDIVORA" 
+                            src="" 
+                            alt="" 
                             className="h-20 w-auto"
                         />
                     </div>
