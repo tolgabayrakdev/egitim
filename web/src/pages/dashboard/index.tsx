@@ -7,8 +7,6 @@ interface UserData {
     last_name: string;
     email: string;
     phone: string;
-    specialty?: string;
-    bio?: string;
 }
 
 export default function DashboardIndex() {

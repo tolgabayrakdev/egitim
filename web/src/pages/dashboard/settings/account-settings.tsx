@@ -4,12 +4,11 @@ import { apiUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { User, Lock, Trash2, Edit2, Mail, Phone, FileText, Briefcase, Save, X } from "lucide-react";
+import { User, Lock, Trash2, Edit2, Mail, Phone, Save, X } from "lucide-react";
 
 interface User {
     id: string;
@@ -17,8 +16,6 @@ interface User {
     last_name: string;
     email: string;
     phone: string;
-    bio?: string;
-    specialty?: string;
 }
 
 export default function AccountSettings() {
@@ -38,16 +35,12 @@ export default function AccountSettings() {
         last_name: "",
         email: "",
         phone: "",
-        bio: "",
-        specialty: "",
     });
     const [formData, setFormData] = useState({
         first_name: "",
         last_name: "",
         email: "",
         phone: "",
-        bio: "",
-        specialty: "",
     });
 
     const [passwordData, setPasswordData] = useState({
@@ -83,8 +76,6 @@ export default function AccountSettings() {
                     last_name: userData.last_name || "",
                     email: userData.email || "",
                     phone: userData.phone?.replace("+90", "") || "",
-                    bio: userData.bio || "",
-                    specialty: userData.specialty || "",
                 };
                 setFormData(initialData);
                 setOriginalFormData(initialData);
@@ -125,8 +116,6 @@ export default function AccountSettings() {
                 body: JSON.stringify({
                     first_name: formData.first_name,
                     last_name: formData.last_name,
-                    bio: formData.bio,
-                    specialty: formData.specialty,
                 }),
             });
 
@@ -396,46 +385,6 @@ export default function AccountSettings() {
                             />
                             <p className="text-xs text-muted-foreground">Telefon numarası değiştirilemez</p>
                         </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="specialty" className="text-sm font-medium flex items-center gap-2">
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
-                            Uzmanlık Alanı
-                        </Label>
-                        <Input
-                            id="specialty"
-                            value={formData.specialty}
-                            onChange={(e) =>
-                                setFormData({ ...formData, specialty: e.target.value })
-                            }
-                            disabled={!isEditing}
-                            placeholder="Örn: Psikoloji, Eğitim, vb."
-                            className="transition-all"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="bio" className="text-sm font-medium flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            Biyografi
-                        </Label>
-                        <Textarea
-                            id="bio"
-                            value={formData.bio}
-                            onChange={(e) => {
-                                const value = e.target.value.slice(0, 500);
-                                setFormData({ ...formData, bio: value });
-                            }}
-                            disabled={!isEditing}
-                            placeholder="Kendiniz hakkında kısa bir açıklama yazın..."
-                            rows={4}
-                            maxLength={500}
-                            className="transition-all resize-none"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            {formData.bio.length}/500 karakter
-                        </p>
                     </div>
                 </form>
             </div>

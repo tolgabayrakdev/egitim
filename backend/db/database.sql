@@ -11,9 +11,6 @@ CREATE TABLE users (
     is_verified BOOLEAN DEFAULT false,
     is_email_verified BOOLEAN DEFAULT false,
     is_sms_verified BOOLEAN DEFAULT false,
-    bio TEXT,
-    specialty VARCHAR(255),
-    profile_image_url TEXT,
     email_verify_token VARCHAR(255),
     email_verify_token_created_at TIMESTAMP,
     email_verify_code VARCHAR(6),
@@ -33,3 +30,17 @@ CREATE TABLE password_reset_tokens (
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT now()
 );
+
+-- Abonelikler
+CREATE TABLE subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan VARCHAR(50) NOT NULL CHECK (plan IN ('free', 'pro', 'premium')),
+    status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'expired')),
+    start_date TIMESTAMP NOT NULL DEFAULT now(),
+    end_date TIMESTAMP,
+    payment_method VARCHAR(50),
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
+);
+

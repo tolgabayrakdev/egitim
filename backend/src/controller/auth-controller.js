@@ -40,7 +40,7 @@ export default class AuthController {
 
     async register(req, res, next) {
         try {
-            const { first_name, last_name, email, phone, password, specialty } = req.body;
+            const { first_name, last_name, email, phone, password } = req.body;
 
             const result = await this.authService.register({
                 first_name,
@@ -48,7 +48,6 @@ export default class AuthController {
                 email,
                 phone,
                 password,
-                specialty: specialty ? specialty.trim() : null,
             });
             res.status(201).json({
                 success: true,
@@ -168,8 +167,8 @@ export default class AuthController {
     async updateUser(req, res, next) {
         try {
             const id = req.user.id;
-            const { first_name, last_name, email, phone, bio, specialty } = req.body;
-            const result = await this.authService.updateUser(id, { first_name, last_name, email, phone, bio, specialty });
+            const { first_name, last_name, email, phone } = req.body;
+            const result = await this.authService.updateUser(id, { first_name, last_name, email, phone });
             res.status(200).json({
                 success: true,
                 message: "Kullanıcı bilgileri güncellendi",

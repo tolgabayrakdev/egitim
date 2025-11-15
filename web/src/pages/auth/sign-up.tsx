@@ -12,7 +12,6 @@ export default function SignUp() {
         email: "",
         phone: "",
         password: "",
-        specialty: "",
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -68,8 +67,6 @@ export default function SignUp() {
         setError("");
         setSuccess(false);
 
-        // Specialty artık opsiyonel
-
         // Telefon numarası validasyonu (10 haneli olmalı)
         if (formData.phone.length !== 10) {
             setError("Telefon numarası 10 haneli olmalıdır");
@@ -88,7 +85,6 @@ export default function SignUp() {
                 email: formData.email,
                 phone: fullPhone,
                 password: formData.password,
-                specialty: formData.specialty,
             };
 
             const response = await fetch(apiUrl("api/auth/register"), {
@@ -227,18 +223,6 @@ export default function SignUp() {
                                 maxLength={10}
                             />
                         </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="specialty">Uzmanlık Alanı (Opsiyonel)</Label>
-                        <Input
-                            id="specialty"
-                            name="specialty"
-                            type="text"
-                            placeholder="Örn: Psikoloji, Eğitim, Koçluk"
-                            value={formData.specialty}
-                            onChange={handleChange}
-                            disabled={loading}
-                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="password">Şifre</Label>

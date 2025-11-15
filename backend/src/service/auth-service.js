@@ -111,9 +111,8 @@ export default class AuthService {
                     password,
                     first_name,
                     last_name,
-                    phone,
-                    specialty
-                ) VALUES ($1, $2, $3, $4, $5, $6)
+                    phone
+                ) VALUES ($1, $2, $3, $4, $5)
                 RETURNING id
                 `,
                 [
@@ -121,8 +120,7 @@ export default class AuthService {
                     hashedPassword,
                     user.first_name,
                     user.last_name,
-                    user.phone,
-                    user.specialty || null
+                    user.phone
                 ]
             );
             await client.query("COMMIT");
@@ -362,7 +360,7 @@ export default class AuthService {
                     throw new HttpException(400, "E-posta ve telefon numarası değiştirilemez");
                 }
 
-                // Güncellenecek alanları belirle (sadece first_name, last_name, bio, specialty)
+                // Güncellenecek alanları belirle (sadece first_name, last_name)
                 const updateFields = [];
                 const updateValues = [];
                 let paramIndex = 1;
@@ -374,14 +372,6 @@ export default class AuthService {
                 if (user.last_name !== undefined) {
                     updateFields.push(`last_name = $${paramIndex++}`);
                     updateValues.push(user.last_name);
-                }
-                if (user.bio !== undefined) {
-                    updateFields.push(`bio = $${paramIndex++}`);
-                    updateValues.push(user.bio);
-                }
-                if (user.specialty !== undefined) {
-                    updateFields.push(`specialty = $${paramIndex++}`);
-                    updateValues.push(user.specialty);
                 }
 
                 if (updateFields.length === 0) {
@@ -399,7 +389,7 @@ export default class AuthService {
                     UPDATE users 
                     SET ${updateFields.join(", ")}
                     WHERE id = $${paramIndex}
-                    RETURNING id, first_name, last_name, email, phone, bio, specialty, created_at, updated_at
+                    RETURNING id, first_name, last_name, email, phone, created_at, updated_at
                 `;
 
                 const result = await client.query(query, updateValues);
