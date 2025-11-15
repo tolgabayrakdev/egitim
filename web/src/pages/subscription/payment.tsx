@@ -5,21 +5,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { apiUrl } from "@/lib/api";
 import { toast } from "sonner";
-import { CreditCard, Lock, ArrowLeft, Save, Shield } from "lucide-react";
+import { CreditCard, Lock, ArrowLeft, Save } from "lucide-react";
 
-const plans: Record<string, { name: string; price: number }> = {
-    pro: { name: 'Pro', price: 299 },
-    premium: { name: 'Premium', price: 599 }
-};
+interface Plan {
+    id: string;
+    name: string;
+    duration: string;
+    price: number;
+    original_price?: number;
+}
 
 export default function PaymentPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const planId = searchParams.get("plan");
+    const planId = searchParams.get("planId");
     const [loading, setLoading] = useState(false);
+    const [fetchingPlan, setFetchingPlan] = useState(true);
     const [error, setError] = useState("");
+    const [plan, setPlan] = useState<Plan | null>(null);
     const [paymentData, setPaymentData] = useState({
         cardNumber: "",
         cardName: "",
@@ -27,14 +33,46 @@ export default function PaymentPage() {
         cvv: "",
     });
 
-    const plan = planId ? plans[planId] : null;
-
     useEffect(() => {
-        if (!planId || !plan) {
+        if (!planId) {
             toast.error("Geçersiz plan seçimi");
             navigate("/subscription");
+            return;
         }
-    }, [planId, plan, navigate]);
+
+        const fetchPlan = async () => {
+            try {
+                setFetchingPlan(true);
+                const response = await fetch(apiUrl("api/subscription/plans"), {
+                    method: "GET",
+                    credentials: "include",
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const foundPlan = data.plans.find((p: Plan) => p.id === planId);
+                    if (foundPlan) {
+                        setPlan(foundPlan);
+                    } else {
+                        toast.error("Plan bulunamadı");
+                        navigate("/subscription");
+                    }
+                } else {
+                    toast.error("Plan bilgileri yüklenemedi");
+                    navigate("/subscription");
+                }
+            } catch (error) {
+                toast.error("Bir hata oluştu");
+                console.error(error);
+                navigate("/subscription");
+            } finally {
+                setFetchingPlan(false);
+            }
+        };
+
+        fetchPlan();
+    }, [planId, navigate]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -86,14 +124,14 @@ export default function PaymentPage() {
             // Simüle edilmiş ödeme işlemi
             await new Promise(resolve => setTimeout(resolve, 2000));
 
-            const response = await fetch(apiUrl("api/subscriptions/create"), {
+            const response = await fetch(apiUrl("api/subscription/create"), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    plan: planId,
+                    planId: planId,
                     paymentMethod: "credit_card"
                 }),
             });
@@ -117,9 +155,25 @@ export default function PaymentPage() {
         }
     };
 
+    if (fetchingPlan) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                    <div className="text-muted-foreground">Plan bilgileri yükleniyor...</div>
+                </div>
+            </div>
+        );
+    }
+
     if (!plan) {
         return null;
     }
+
+    const planName = plan.name === 'pro' ? 'Pro' : 'Premium';
+    const planPrice = Number(plan.price);
+    const isYearly = plan.duration === 'yearly';
+    const monthlyPrice = isYearly ? (planPrice / 12).toFixed(2) : planPrice.toFixed(2);
 
     return (
         <div className="space-y-8 p-6 max-w-4xl mx-auto">
@@ -138,7 +192,7 @@ export default function PaymentPage() {
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight">Ödeme Bilgileri</h1>
                 <p className="text-muted-foreground">
-                    {plan.name} planını seçtiniz. Ödeme bilgilerinizi girin.
+                    {planName} {isYearly ? 'Yıllık' : 'Aylık'} planını seçtiniz. Ödeme bilgilerinizi girin.
                 </p>
             </div>
 
@@ -171,12 +225,33 @@ export default function PaymentPage() {
                     <div className="p-4 bg-muted rounded-lg">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium">{plan.name} Plan</p>
-                                <p className="text-sm text-muted-foreground">Aylık faturalandırma</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-medium">{planName} Plan</p>
+                                    {isYearly && (
+                                        <Badge variant="secondary" className="text-xs">
+                                            %20 İndirim
+                                        </Badge>
+                                    )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {isYearly ? 'Yıllık faturalandırma' : 'Aylık faturalandırma'}
+                                </p>
+                                {isYearly && plan.original_price && (
+                                    <p className="text-xs text-muted-foreground line-through mt-1">
+                                        {Number(plan.original_price).toFixed(2)}₺
+                                    </p>
+                                )}
                             </div>
                             <div className="text-right">
-                                <p className="text-2xl font-bold">{plan.price}₺</p>
-                                <p className="text-xs text-muted-foreground">/ay</p>
+                                <p className="text-2xl font-bold">{planPrice.toFixed(2)}₺</p>
+                                <p className="text-xs text-muted-foreground">
+                                    /{isYearly ? 'yıl' : 'ay'}
+                                </p>
+                                {isYearly && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Aylık: {monthlyPrice}₺
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -273,7 +348,7 @@ export default function PaymentPage() {
                             className="gap-2"
                         >
                             <Save className="h-4 w-4" />
-                            {loading ? "İşleniyor..." : `${plan.price}₺ Öde ve Abone Ol`}
+                            {loading ? "İşleniyor..." : `${planPrice.toFixed(2)}₺ Öde ve Abone Ol`}
                         </Button>
                     </div>
                 </form>

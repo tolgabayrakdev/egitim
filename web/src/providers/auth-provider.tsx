@@ -31,12 +31,49 @@ function AuthProvider({ children }: AuthProviderProps) {
             clearTimeout(timeoutId);
             
             if (res.status === 200) {
-                const userData = await res.json();
+                await res.json(); // User data'yı al ama kullanma
                 
-                // Subscription kontrolü artık gerekli değil
-                
-                setLoading(false);
-                setRateLimited(false);
+                // Subscription kontrolü - ZORUNLU
+                try {
+                    const subscriptionController = new AbortController();
+                    const subscriptionTimeoutId = setTimeout(() => subscriptionController.abort(), 5000); // 5 saniye timeout
+                    
+                    const subscriptionRes = await fetch(apiUrl('/api/subscription/check'), {
+                        method: 'GET',
+                        credentials: 'include',
+                        signal: subscriptionController.signal,
+                    });
+                    
+                    clearTimeout(subscriptionTimeoutId);
+                    
+                    if (subscriptionRes.ok) {
+                        const subscriptionData = await subscriptionRes.json();
+                        // Eğer subscription yoksa (ne trial ne de normal subscription) subscription sayfasına yönlendir
+                        if (subscriptionData.success && !subscriptionData.hasSubscription) {
+                            setNeedsSubscription(true);
+                            setLoading(false);
+                            return;
+                        }
+                        // Subscription varsa devam et
+                        setLoading(false);
+                        setRateLimited(false);
+                    } else {
+                        // Subscription kontrolü başarısız oldu, subscription sayfasına yönlendir
+                        setNeedsSubscription(true);
+                        setLoading(false);
+                        return;
+                    }
+                } catch (subError) {
+                    // Subscription kontrolü başarısız oldu, subscription sayfasına yönlendir
+                    if (subError instanceof Error && subError.name === 'AbortError') {
+                        console.error('Subscription check timeout');
+                    } else {
+                        console.error('Subscription check failed:', subError);
+                    }
+                    setNeedsSubscription(true);
+                    setLoading(false);
+                    return;
+                }
             } else if (res.status === 403) {
                 // Ban durumu kontrolü
                 const errorData = await res.json().catch(() => ({ message: 'Hesabınız kapatılmıştır.' }));

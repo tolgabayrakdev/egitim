@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router"
 import { Home, Settings, User2, LogOut, Bell, Activity } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 import {
   Sidebar,
@@ -46,8 +47,16 @@ interface UserResponse {
   }
 }
 
+interface Subscription {
+  plan_name: string
+  plan_duration: string
+  is_trial: boolean
+  status: string
+}
+
 export function AppSidebar() {
   const [user, setUser] = useState<UserResponse | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
   const location = useLocation()
@@ -80,7 +89,27 @@ export function AppSidebar() {
       }
     }
 
+    const fetchSubscription = async () => {
+      try {
+        const response = await fetch(apiUrl("api/subscription/"), {
+          method: "GET",
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.subscription) {
+            setSubscription(data.subscription)
+          }
+        }
+      } catch (error) {
+        // Subscription yoksa sessizce devam et
+        console.error("Error fetching subscription:", error)
+      }
+    }
+
     fetchUser()
+    fetchSubscription()
   }, [])
 
   const logout = async () => {
@@ -180,6 +209,21 @@ export function AppSidebar() {
                         <span className="text-xs font-medium text-sidebar-foreground truncate">
                           {user.user?.first_name} {user.user?.last_name}
                         </span>
+                        {subscription && (
+                          <Badge 
+                            variant={subscription.is_trial ? "secondary" : subscription.plan_name === 'premium' ? "default" : "outline"}
+                            className="text-[9px] px-1.5 py-0 h-4 shrink-0"
+                          >
+                            {subscription.is_trial 
+                              ? 'Deneme' 
+                              : subscription.plan_name === 'pro' 
+                                ? 'Pro' 
+                                : subscription.plan_name === 'premium'
+                                  ? 'Premium'
+                                  : subscription.plan_name
+                            }
+                          </Badge>
+                        )}
                       </div>
                       <span className="text-[10px] text-sidebar-foreground/60 truncate w-full">
                         {user.user?.email}

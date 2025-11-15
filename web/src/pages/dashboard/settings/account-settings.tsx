@@ -8,7 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { User, Lock, Trash2, Edit2, Mail, Phone, Save, X } from "lucide-react";
+import { User, Lock, Trash2, Edit2, Mail, Phone, Save, X, CreditCard, Calendar, DollarSign, CheckCircle2, XCircle, Clock, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface User {
     id: string;
@@ -16,6 +17,18 @@ interface User {
     last_name: string;
     email: string;
     phone: string;
+}
+
+interface Subscription {
+    id: string;
+    plan_name: string;
+    plan_duration: string;
+    plan_price: number;
+    status: string;
+    start_date: string;
+    end_date: string | null;
+    is_trial: boolean;
+    trial_end_date: string | null;
 }
 
 export default function AccountSettings() {
@@ -29,6 +42,7 @@ export default function AccountSettings() {
     const [success, setSuccess] = useState("");
 
     const [user, setUser] = useState<User | null>(null);
+    const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [originalFormData, setOriginalFormData] = useState({
         first_name: "",
@@ -53,6 +67,7 @@ export default function AccountSettings() {
 
     useEffect(() => {
         fetchUser();
+        fetchSubscription();
     }, []);
 
     const fetchUser = async () => {
@@ -86,6 +101,25 @@ export default function AccountSettings() {
             toast.error(errorMessage);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSubscription = async () => {
+        try {
+            const response = await fetch(apiUrl("api/subscription/"), {
+                method: "GET",
+                credentials: "include",
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.subscription) {
+                    setSubscription(data.subscription);
+                }
+            }
+        } catch (err) {
+            // Subscription yoksa sessizce devam et
+            console.error("Subscription fetch error:", err);
         }
     };
 
@@ -387,6 +421,215 @@ export default function AccountSettings() {
                         </div>
                     </div>
                 </form>
+            </div>
+
+            {/* Abonelik Bilgileri */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-primary/10 p-2">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-semibold">Abonelik Bilgileri</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Mevcut abonelik durumunuz ve plan detaylarınız
+                        </p>
+                    </div>
+                </div>
+                
+                <Separator />
+                
+                {subscription ? (
+                    <div className="space-y-4">
+                        {/* Bitiş Tarihi Uyarısı - 3 gün kala */}
+                        {(() => {
+                            const endDate = subscription.is_trial && subscription.trial_end_date
+                                ? new Date(subscription.trial_end_date)
+                                : subscription.end_date
+                                ? new Date(subscription.end_date)
+                                : null;
+                            
+                            if (endDate && subscription.status === 'active') {
+                                const now = new Date();
+                                const diffTime = endDate.getTime() - now.getTime();
+                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                
+                                if (diffDays <= 3 && diffDays > 0) {
+                                    return (
+                                        <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950 dark:border-orange-800 animate-in fade-in-0">
+                                            <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                            <AlertTitle className="text-orange-800 dark:text-orange-200">
+                                                Abonelik Süresi Dolmak Üzere
+                                            </AlertTitle>
+                                            <AlertDescription className="text-orange-700 dark:text-orange-300 space-y-2">
+                                                <p>
+                                                    Aboneliğiniz {diffDays} gün sonra sona erecek. 
+                                                    Kesintisiz hizmet almak için lütfen aboneliğinizi yenileyin.
+                                                </p>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => navigate('/subscription')}
+                                                    className="mt-2 border-orange-300 text-orange-700 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-900"
+                                                >
+                                                    <CreditCard className="h-3 w-3 mr-2" />
+                                                    Aboneliği Yenile
+                                                </Button>
+                                            </AlertDescription>
+                                        </Alert>
+                                    );
+                                }
+                            }
+                            return null;
+                        })()}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-2">
+                                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                    Plan
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-base font-medium">
+                                        {subscription.plan_name === 'trial' 
+                                            ? 'Ücretsiz Deneme' 
+                                            : subscription.plan_name === 'pro' 
+                                                ? 'Pro' 
+                                                : 'Premium'
+                                        }
+                                    </p>
+                                    {subscription.plan_duration && subscription.plan_duration !== 'trial' && (
+                                        <Badge variant="outline" className="text-xs">
+                                            {subscription.plan_duration === 'monthly' ? 'Aylık' : 'Yıllık'}
+                                        </Badge>
+                                    )}
+                                    {subscription.is_trial && (
+                                        <Badge variant="secondary" className="text-xs">
+                                            Deneme
+                                        </Badge>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                                    Durum
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                    {subscription.status === 'active' ? (
+                                        <>
+                                            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                                                Aktif
+                                            </Badge>
+                                        </>
+                                    ) : subscription.status === 'cancelled' ? (
+                                        <>
+                                            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                            <Badge variant="destructive">
+                                                İptal Edildi
+                                            </Badge>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                            <Badge variant="secondary">
+                                                Süresi Doldu
+                                            </Badge>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    Başlangıç Tarihi
+                                </Label>
+                                <p className="text-base">
+                                    {new Date(subscription.start_date).toLocaleDateString('tr-TR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                    })}
+                                </p>
+                    </div>
+
+                    <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    Bitiş Tarihi
+                                </Label>
+                                <p className="text-base">
+                                    {subscription.is_trial && subscription.trial_end_date
+                                        ? new Date(subscription.trial_end_date).toLocaleDateString('tr-TR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                          })
+                                        : subscription.end_date
+                                        ? new Date(subscription.end_date).toLocaleDateString('tr-TR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                          })
+                                        : 'Belirtilmemiş'
+                                    }
+                                </p>
+                            </div>
+                        </div>
+
+                        {subscription.plan_price && (
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-2">
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                    Fiyat
+                        </Label>
+                                <div className="flex items-baseline gap-2">
+                                    <p className="text-2xl font-bold">
+                                        {Number(subscription.plan_price).toFixed(2)}₺
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                        /{subscription.plan_duration === 'monthly' ? 'ay' : subscription.plan_duration === 'yearly' ? 'yıl' : ''}
+                                    </p>
+                                    {subscription.plan_duration === 'yearly' && (
+                                        <p className="text-xs text-muted-foreground ml-2">
+                                            (Aylık: {(Number(subscription.plan_price) / 12).toFixed(2)}₺)
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {!subscription.is_trial && (
+                            <div className="pt-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => navigate('/subscription')}
+                                    className="w-full sm:w-auto"
+                                >
+                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    Planı Değiştir
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="rounded-lg bg-muted/50 p-6 text-center space-y-4">
+                        <p className="text-muted-foreground">
+                            Aktif bir aboneliğiniz bulunmuyor.
+                        </p>
+                        <Button
+                            onClick={() => navigate('/subscription')}
+                            className="gap-2"
+                        >
+                            <CreditCard className="h-4 w-4" />
+                            Plan Seç
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Şifre Değiştirme */}
