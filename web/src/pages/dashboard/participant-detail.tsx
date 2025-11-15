@@ -9,13 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { 
-    ArrowLeft, 
-    User, 
-    Mail, 
-    Phone, 
-    Calendar, 
-    Package, 
+import {
+    ArrowLeft,
+    User,
+    Mail,
+    Phone,
+    Calendar,
+    Package,
     ClipboardList,
     CheckCircle2,
     Clock,
@@ -219,7 +219,7 @@ export default function ParticipantDetail() {
             } else {
                 toast.error(data.message || "Not oluşturulamadı");
             }
-        } catch (error) {
+        } catch {
             toast.error("Not oluşturulurken bir hata oluştu");
         }
     };
@@ -253,7 +253,7 @@ export default function ParticipantDetail() {
             } else {
                 toast.error(data.message || "Not güncellenemedi");
             }
-        } catch (error) {
+        } catch {
             toast.error("Not güncellenirken bir hata oluştu");
         }
     };
@@ -275,7 +275,7 @@ export default function ParticipantDetail() {
             } else {
                 toast.error(data.message || "Not silinemedi");
             }
-        } catch (error) {
+        } catch {
             toast.error("Not silinirken bir hata oluştu");
         }
     };
@@ -344,8 +344,8 @@ export default function ParticipantDetail() {
         return null;
     }
 
-    const completionRate = analytics?.statistics.completion_rate 
-        ? parseFloat(analytics.statistics.completion_rate) 
+    const completionRate = analytics?.statistics.completion_rate
+        ? parseFloat(analytics.statistics.completion_rate)
         : 0;
 
     return (
@@ -415,7 +415,7 @@ export default function ParticipantDetail() {
                         <h2 className="text-xl font-semibold">İstatistikler</h2>
                     </div>
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="p-6 rounded-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border border-green-200/50 dark:border-green-800/30">
+                        <div className="p-6 rounded-lg bg-linear-to-bl from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border border-green-200/50 dark:border-green-800/30">
                             <div className="flex items-center justify-between mb-3">
                                 <p className="text-sm font-medium text-muted-foreground">Aktif İlişkiler</p>
                                 <Activity className="h-5 w-5 text-green-600" />
@@ -425,7 +425,7 @@ export default function ParticipantDetail() {
                             </p>
                         </div>
 
-                        <div className="p-6 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border border-blue-200/50 dark:border-blue-800/30">
+                        <div className="p-6 rounded-lg bg-linear-to-bl from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border border-blue-200/50 dark:border-blue-800/30">
                             <div className="flex items-center justify-between mb-3">
                                 <p className="text-sm font-medium text-muted-foreground">Toplam Görevler</p>
                                 <ClipboardList className="h-5 w-5 text-blue-600" />
@@ -433,7 +433,7 @@ export default function ParticipantDetail() {
                             <p className="text-3xl font-bold text-blue-600">{analytics.statistics.total_tasks}</p>
                         </div>
 
-                        <div className="p-6 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border border-purple-200/50 dark:border-purple-800/30">
+                        <div className="p-6 rounded-lg bg-linear-to-bl from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border border-purple-200/50 dark:border-purple-800/30">
                             <div className="flex items-center justify-between mb-3">
                                 <p className="text-sm font-medium text-muted-foreground">Tamamlanma Oranı</p>
                                 <TrendingUp className="h-5 w-5 text-purple-600" />
@@ -442,13 +442,13 @@ export default function ParticipantDetail() {
                             <Progress value={completionRate} className="h-2" />
                         </div>
 
-                        <div className="p-6 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 border border-orange-200/50 dark:border-orange-800/30">
+                        <div className="p-6 rounded-lg bg-linear-to-bl from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 border border-orange-200/50 dark:border-orange-800/30">
                             <div className="flex items-center justify-between mb-3">
                                 <p className="text-sm font-medium text-muted-foreground">Ort. Tamamlanma Süresi</p>
                                 <Clock className="h-5 w-5 text-orange-600" />
                             </div>
                             <p className="text-3xl font-bold text-orange-600">
-                                {analytics.statistics.avg_task_completion_days 
+                                {analytics.statistics.avg_task_completion_days
                                     ? `${Math.round(parseFloat(analytics.statistics.avg_task_completion_days))} gün`
                                     : 'N/A'}
                             </p>
@@ -523,59 +523,59 @@ export default function ParticipantDetail() {
                                 Yeni Not
                             </Button>
                         </DialogTrigger>
-                            <DialogContent className="max-w-[95vw] sm:max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle>
-                                        {editingNote ? "Notu Düzenle" : "Yeni Not Oluştur"}
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        {participant.first_name} {participant.last_name} hakkında not ekleyin
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={editingNote ? handleUpdateNote : handleCreateNote} className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="note_title">Başlık (Opsiyonel)</Label>
-                                        <Input
-                                            id="note_title"
-                                            value={noteForm.title}
-                                            onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
-                                            placeholder="Not başlığı"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="note_content">İçerik *</Label>
-                                        <Textarea
-                                            id="note_content"
-                                            value={noteForm.content}
-                                            onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
-                                            required
-                                            rows={6}
-                                            placeholder="Not içeriği..."
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id="note_important"
-                                            checked={noteForm.is_important}
-                                            onChange={(e) => setNoteForm({ ...noteForm, is_important: e.target.checked })}
-                                            className="rounded border-gray-300"
-                                        />
-                                        <Label htmlFor="note_important" className="cursor-pointer">
-                                            Önemli olarak işaretle
-                                        </Label>
-                                    </div>
-                                    <div className="flex justify-end gap-2 pt-4">
-                                        <Button type="button" variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
-                                            İptal
-                                        </Button>
-                                        <Button type="submit">
-                                            {editingNote ? "Güncelle" : "Oluştur"}
-                                        </Button>
-                                    </div>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
+                        <DialogContent className="max-w-[95vw] sm:max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {editingNote ? "Notu Düzenle" : "Yeni Not Oluştur"}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    {participant.first_name} {participant.last_name} hakkında not ekleyin
+                                </DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={editingNote ? handleUpdateNote : handleCreateNote} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="note_title">Başlık (Opsiyonel)</Label>
+                                    <Input
+                                        id="note_title"
+                                        value={noteForm.title}
+                                        onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
+                                        placeholder="Not başlığı"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="note_content">İçerik *</Label>
+                                    <Textarea
+                                        id="note_content"
+                                        value={noteForm.content}
+                                        onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
+                                        required
+                                        rows={6}
+                                        placeholder="Not içeriği..."
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="note_important"
+                                        checked={noteForm.is_important}
+                                        onChange={(e) => setNoteForm({ ...noteForm, is_important: e.target.checked })}
+                                        className="rounded border-gray-300"
+                                    />
+                                    <Label htmlFor="note_important" className="cursor-pointer">
+                                        Önemli olarak işaretle
+                                    </Label>
+                                </div>
+                                <div className="flex justify-end gap-2 pt-4">
+                                    <Button type="button" variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
+                                        İptal
+                                    </Button>
+                                    <Button type="submit">
+                                        {editingNote ? "Güncelle" : "Oluştur"}
+                                    </Button>
+                                </div>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 {loadingNotes ? (

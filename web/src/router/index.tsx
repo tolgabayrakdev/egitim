@@ -4,11 +4,8 @@ import DashboardIndex from "@/pages/dashboard/index"
 import AccountSettings from "@/pages/dashboard/settings/account-settings"
 import NotificationSettings from "@/pages/dashboard/settings/notification-settings"
 import Invitations from "@/pages/dashboard/invitations"
-import Packages from "@/pages/dashboard/packages"
-import Coaching from "@/pages/dashboard/coaching"
-import CoachingReportDetail from "@/pages/dashboard/coaching-report-detail"
+
 import ParticipantDetail from "@/pages/dashboard/participant-detail"
-import Tasks from "@/pages/dashboard/tasks"
 import ActivityLogs from "@/pages/dashboard/activity-logs"
 
 import SignIn from "@/pages/auth/sign-in"
@@ -40,24 +37,8 @@ export const router = createBrowserRouter([
                 element: <Invitations />
             },
             {
-                path: '/dashboard/packages',
-                element: <Packages />
-            },
-            {
-                path: '/dashboard/coaching',
-                element: <Coaching />
-            },
-            {
-                path: '/dashboard/coaching/:relationshipId/report',
-                element: <CoachingReportDetail />
-            },
-            {
                 path: '/dashboard/coaching/:slug',
                 element: <ParticipantDetail />
-            },
-            {
-                path: '/dashboard/tasks',
-                element: <Tasks />
             },
             {
                 path: '/dashboard/activity-logs',

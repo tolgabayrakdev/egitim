@@ -39,7 +39,7 @@ export default function Invitations() {
 
             const data = await response.json();
             setInvitations(data.invitations || []);
-        } catch (error) {
+        } catch{
             toast.error("Davetler yüklenirken bir hata oluştu");
         } finally {
             setLoadingInvitations(false);
@@ -64,7 +64,7 @@ export default function Invitations() {
                     const data = await response.json();
                     setPackages(data.packages || []);
                 }
-            } catch (error) {
+            } catch {
                 console.error("Paketler yüklenemedi");
             }
         };

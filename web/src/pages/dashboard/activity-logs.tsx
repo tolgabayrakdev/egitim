@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Separator } from "@/components/ui/separator";
 import { apiUrl } from "@/lib/api";
 import { toast } from "sonner";
-import { Activity, Clock, User, Package, ClipboardList, Send, CheckCircle2, Filter } from "lucide-react";
+import { Activity, Clock, User, ClipboardList, Send, CheckCircle2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ActivityLog {
@@ -56,7 +56,7 @@ export default function ActivityLogs() {
 
             const data = await response.json();
             setLogs(data.logs || []);
-        } catch (error) {
+        } catch {
             toast.error("Aktivite logları yüklenirken bir hata oluştu");
         } finally {
             setLoading(false);
@@ -112,7 +112,7 @@ export default function ActivityLogs() {
     };
 
     const isProfessional = userRole === 'professional';
-    
+
     // Filtreleme
     const filteredLogs = logs.filter(log => {
         if (filter === 'all') return true;
@@ -214,7 +214,7 @@ export default function ActivityLogs() {
                                 className="p-4 sm:p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-3"
                             >
                                 <div className="flex items-start gap-3 sm:gap-4">
-                                    <div className="rounded-lg bg-primary/10 p-2 flex-shrink-0">
+                                    <div className="rounded-lg bg-primary/10 p-2 shrink-0">
                                         <ActionIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                                     </div>
                                     <div className="flex-1 space-y-2 min-w-0">
