@@ -4,11 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { apiUrl } from "@/lib/api";
 import { toast } from "sonner";
-import { Plus, Trash2, CheckCircle2, Clock, Send, MessageSquare, FileText, ClipboardList } from "lucide-react";
-import { useSearchParams } from "react-router";
+import { Plus, Trash2, CheckCircle2, Clock, Send, MessageSquare, FileText, ClipboardList, ChevronDown, TrendingUp, AlertCircle, ArrowLeft } from "lucide-react";
+import { useSearchParams, Link } from "react-router";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 interface TaskData {
     id: string;
@@ -30,6 +32,11 @@ interface TaskData {
 interface CoachingRelationship {
     id: string;
     package_title: string;
+    participant_id?: string;
+    participant_first_name?: string;
+    participant_last_name?: string;
+    participant_email?: string;
+    status?: 'active' | 'completed' | 'cancelled';
 }
 
 export default function Tasks() {
@@ -38,9 +45,12 @@ export default function Tasks() {
     
     const [tasks, setTasks] = useState<TaskData[]>([]);
     const [relationships, setRelationships] = useState<CoachingRelationship[]>([]);
+    const [selectedParticipantId, setSelectedParticipantId] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmissionDialogOpen, setIsSubmissionDialogOpen] = useState(false);
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+    const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{ taskId: string; newStatus: string } | null>(null);
     const [selectedTask, setSelectedTask] = useState<TaskData | null>(null);
     const [submissions, setSubmissions] = useState<Array<{
         id: string;
@@ -51,7 +61,7 @@ export default function Tasks() {
         created_at: string;
     }>>([]);
     const [formData, setFormData] = useState({
-        coaching_relationship_id: relationshipId || "",
+        participant_id: "",
         title: "",
         description: "",
         due_date: ""
@@ -123,10 +133,10 @@ export default function Tasks() {
 
     useEffect(() => {
         if (userRole) {
-            fetchTasks();
             if (userRole === 'professional') {
                 fetchRelationships();
             }
+            fetchTasks();
         }
     }, [userRole, fetchTasks, fetchRelationships]);
 
@@ -135,13 +145,30 @@ export default function Tasks() {
         setSubmitting(true);
 
         try {
+            // URL'de relationship varsa onu kullan, yoksa seçilen katılımcının aktif ilişkisini bul
+            let participantRelationship: CoachingRelationship | undefined;
+            
+            if (relationshipId) {
+                participantRelationship = relationships.find(r => r.id === relationshipId && r.status === 'active');
+            } else {
+                participantRelationship = relationships.find(
+                    r => r.participant_id === formData.participant_id && r.status === 'active'
+                );
+            }
+
+            if (!participantRelationship) {
+                toast.error("Aktif koçluk ilişkisi bulunamadı");
+                setSubmitting(false);
+                return;
+            }
+
             const payload: {
                 coaching_relationship_id: string;
                 title: string;
                 description?: string;
                 due_date?: string;
             } = {
-                coaching_relationship_id: formData.coaching_relationship_id,
+                coaching_relationship_id: participantRelationship.id,
                 title: formData.title
             };
 
@@ -169,7 +196,7 @@ export default function Tasks() {
 
             toast.success("Görev oluşturuldu");
             setIsDialogOpen(false);
-            setFormData({ coaching_relationship_id: relationshipId || "", title: "", description: "", due_date: "" });
+            setFormData({ participant_id: "", title: "", description: "", due_date: "" });
             fetchTasks();
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Bir hata oluştu";
@@ -230,6 +257,52 @@ export default function Tasks() {
         }
     };
 
+    const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
+        // Completed veya cancelled için onay iste
+        if (newStatus === 'completed' || newStatus === 'cancelled') {
+            setPendingStatusUpdate({ taskId, newStatus });
+            setIsConfirmDialogOpen(true);
+            return;
+        }
+
+        // Diğer durumlar için direkt güncelle
+        await performStatusUpdate(taskId, newStatus);
+    };
+
+    const performStatusUpdate = async (taskId: string, newStatus: string) => {
+        try {
+            const response = await fetch(apiUrl(`api/tasks/${taskId}`), {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Görev durumu güncellenemedi");
+            }
+
+            const statusLabel = newStatus === 'completed' ? 'Tamamlandı' : newStatus === 'cancelled' ? 'İptal Edildi' : 'Güncellendi';
+            toast.success(`Görev ${statusLabel.toLowerCase()} olarak işaretlendi`);
+            fetchTasks();
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Bir hata oluştu";
+            toast.error(errorMessage);
+        }
+    };
+
+    const handleConfirmStatusUpdate = async () => {
+        if (pendingStatusUpdate) {
+            await performStatusUpdate(pendingStatusUpdate.taskId, pendingStatusUpdate.newStatus);
+            setIsConfirmDialogOpen(false);
+            setPendingStatusUpdate(null);
+        }
+    };
+
     const handleDeleteTask = async (taskId: string) => {
         if (!confirm("Bu görevi silmek istediğinize emin misiniz?")) {
             return;
@@ -267,9 +340,28 @@ export default function Tasks() {
                 return { label: 'Tamamlandı', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', icon: CheckCircle2 };
             case 'overdue':
                 return { label: 'Gecikmiş', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', icon: Clock };
+            case 'cancelled':
+                return { label: 'İptal Edildi', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200', icon: Clock };
             default:
                 return { label: status, color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200', icon: Clock };
         }
+    };
+
+    const getStatusOptions = (currentStatus: string) => {
+        // Tamamlanmış veya iptal edilmiş görevler için seçenek gösterilmez
+        if (currentStatus === 'completed' || currentStatus === 'cancelled') {
+            return [];
+        }
+
+        const allStatuses = [
+            { value: 'pending', label: 'Beklemede' },
+            { value: 'in_progress', label: 'Devam Ediyor' },
+            { value: 'submitted', label: 'Gönderildi' },
+            { value: 'completed', label: 'Tamamlandı' },
+            { value: 'overdue', label: 'Gecikmiş' },
+            { value: 'cancelled', label: 'İptal Edildi' },
+        ];
+        return allStatuses.filter(status => status.value !== currentStatus);
     };
 
     if (loading) {
@@ -285,16 +377,99 @@ export default function Tasks() {
 
     const isProfessional = userRole === 'professional';
 
+    // Benzersiz katılımcıları çıkar (professional için)
+    const uniqueParticipants = isProfessional 
+        ? Array.from(
+            new Map(
+                relationships
+                    .filter(r => r.participant_id)
+                    .map(r => [
+                        r.participant_id!,
+                        {
+                            id: r.participant_id!,
+                            name: `${r.participant_first_name || ''} ${r.participant_last_name || ''}`.trim() || r.participant_email || 'Bilinmeyen',
+                            email: r.participant_email
+                        }
+                    ])
+            ).values()
+        )
+        : [];
+
+    // URL'de relationship varsa, o ilişkiye ait görevleri göster
+    // Yoksa ve professional ise, seçilen katılımcıya göre filtrele
+    const filteredTasks = relationshipId 
+        ? tasks // URL'de relationship varsa tüm görevler zaten o ilişkiye ait
+        : (isProfessional && selectedParticipantId && relationships.length > 0
+            ? tasks.filter((task) => {
+                const taskRelationship = relationships.find(r => r.id === task.coaching_relationship_id);
+                return taskRelationship?.participant_id === selectedParticipantId;
+            })
+            : tasks);
+
+    // İstatistikleri hesapla
+    const totalTasks = filteredTasks.length;
+    const completedTasks = filteredTasks.filter(t => t.status === 'completed').length;
+    const pendingTasks = filteredTasks.filter(t => t.status === 'pending').length;
+    const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress').length;
+    const submittedTasks = filteredTasks.filter(t => t.status === 'submitted').length;
+    const overdueTasks = filteredTasks.filter(t => t.status === 'overdue').length;
+    const cancelledTasks = filteredTasks.filter(t => t.status === 'cancelled').length;
+    
+    // Başarı oranı (tamamlanan / toplam aktif görevler)
+    const activeTasks = totalTasks - cancelledTasks;
+    const successRate = activeTasks > 0 ? Math.round((completedTasks / activeTasks) * 100) : 0;
+
+    // Relationship bilgisini al (URL'de varsa)
+    const currentRelationship = relationshipId 
+        ? relationships.find(r => r.id === relationshipId)
+        : null;
+
     return (
         <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
+            {/* Breadcrumb - Relationship varsa göster */}
+            {relationshipId && currentRelationship && (
+                <Breadcrumb>
+                    <BreadcrumbList>
+                        <BreadcrumbItem>
+                            <BreadcrumbLink asChild>
+                                <Link to="/dashboard/coaching" className="flex items-center gap-1">
+                                    <ArrowLeft className="h-3.5 w-3.5" />
+                                    Koçluk İlişkileri
+                                </Link>
+                            </BreadcrumbLink>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                            <BreadcrumbPage>
+                                {currentRelationship.participant_first_name && currentRelationship.participant_last_name
+                                    ? `${currentRelationship.participant_first_name} ${currentRelationship.participant_last_name}`
+                                    : currentRelationship.participant_email || 'Bilinmeyen'}
+                            </BreadcrumbPage>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                            <BreadcrumbPage>Görevler</BreadcrumbPage>
+                        </BreadcrumbItem>
+                    </BreadcrumbList>
+                </Breadcrumb>
+            )}
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-2">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Görevler</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                    {relationshipId && currentRelationship
+                        ? `${currentRelationship.participant_first_name && currentRelationship.participant_last_name
+                            ? `${currentRelationship.participant_first_name} ${currentRelationship.participant_last_name}`
+                            : currentRelationship.participant_email || 'Bilinmeyen'} - Görevler`
+                        : "Görevler"}
+                </h1>
                     <p className="text-muted-foreground">
-                        {isProfessional 
-                            ? "Katılımcılarınıza görev atayın ve takip edin"
-                            : "Size atanan görevleri görüntüleyin ve tamamlayın"}
+                        {relationshipId && currentRelationship
+                            ? `${currentRelationship.package_title} paketi için görevler`
+                            : (isProfessional 
+                                ? "Katılımcılarınıza görev atayın ve takip edin"
+                                : "Size atanan görevleri görüntüleyin ve tamamlayın")}
                     </p>
                 </div>
                 {isProfessional && (
@@ -309,27 +484,62 @@ export default function Tasks() {
                             <DialogHeader>
                                 <DialogTitle>Yeni Görev Oluştur</DialogTitle>
                                 <DialogDescription>
-                                    Bir koçluk ilişkisine görev atayın
+                                    Bir katılımcıya görev atayın
                                 </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleCreateTask} className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="coaching_relationship_id">Koçluk İlişkisi *</Label>
-                                    <select
-                                        id="coaching_relationship_id"
-                                        value={formData.coaching_relationship_id}
-                                        onChange={(e) => setFormData({ ...formData, coaching_relationship_id: e.target.value })}
-                                        required
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                                    >
-                                        <option value="">İlişki Seçin</option>
-                                        {relationships.map((rel) => (
-                                            <option key={rel.id} value={rel.id}>
-                                                {rel.package_title}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                {/* URL'de relationship varsa katılımcı seçimi gizle, otomatik seç */}
+                                {!relationshipId && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="participant_id">Katılımcı *</Label>
+                                        <select
+                                            id="participant_id"
+                                            value={formData.participant_id}
+                                            onChange={(e) => setFormData({ ...formData, participant_id: e.target.value })}
+                                            required
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                                        >
+                                            <option value="">Katılımcı Seçin</option>
+                                            {uniqueParticipants.map((participant) => {
+                                                // Bu katılımcının aktif ilişkisi var mı kontrol et
+                                                const hasActiveRelationship = relationships.some(
+                                                    r => r.participant_id === participant.id && r.status === 'active'
+                                                );
+                                                if (!hasActiveRelationship) return null;
+                                                
+                                                return (
+                                                    <option key={participant.id} value={participant.id}>
+                                                        {participant.name}
+                                                    </option>
+                                                );
+                                            })}
+                                        </select>
+                                        {formData.participant_id && (() => {
+                                            const selectedParticipantRelationship = relationships.find(
+                                                r => r.participant_id === formData.participant_id && r.status === 'active'
+                                            );
+                                            return selectedParticipantRelationship ? (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Paket: {selectedParticipantRelationship.package_title}
+                                                </p>
+                                            ) : null;
+                                        })()}
+                                    </div>
+                                )}
+                                {relationshipId && (() => {
+                                    const currentRelationship = relationships.find(r => r.id === relationshipId);
+                                    return currentRelationship ? (
+                                        <div className="space-y-2">
+                                            <Label>Katılımcı</Label>
+                                            <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm">
+                                                {currentRelationship.participant_first_name && currentRelationship.participant_last_name
+                                                    ? `${currentRelationship.participant_first_name} ${currentRelationship.participant_last_name}`
+                                                    : currentRelationship.participant_email || 'Bilinmeyen'}
+                                                <span className="ml-2 text-muted-foreground">- {currentRelationship.package_title}</span>
+                                            </div>
+                                        </div>
+                                    ) : null;
+                                })()}
                                 <div className="space-y-2">
                                     <Label htmlFor="title">Görev Başlığı *</Label>
                                     <Input
@@ -375,8 +585,65 @@ export default function Tasks() {
 
             <Separator />
 
+            {/* Katılımcı Filtresi - Professional için (sadece URL'de relationship yoksa) */}
+            {isProfessional && uniqueParticipants.length > 0 && !relationshipId && (
+                <div className="flex items-center gap-3">
+                    <Label htmlFor="participant-filter" className="text-sm font-medium whitespace-nowrap">
+                        Katılımcı:
+                    </Label>
+                    <select
+                        id="participant-filter"
+                        value={selectedParticipantId}
+                        onChange={(e) => setSelectedParticipantId(e.target.value)}
+                        className="flex h-10 w-full sm:w-[250px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                        <option value="">Tüm Katılımcılar</option>
+                        {uniqueParticipants.map((participant) => (
+                            <option key={participant.id} value={participant.id}>
+                                {participant.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
+
+            {/* İstatistikler */}
+            {totalTasks > 0 && (
+                <div className="flex flex-wrap items-center gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Toplam:</span>
+                        <span className="font-semibold">{totalTasks}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-muted-foreground">Tamamlanan:</span>
+                        <span className="font-semibold text-green-600">{completedTasks}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-blue-600" />
+                        <span className="text-muted-foreground">Devam Eden:</span>
+                        <span className="font-semibold text-blue-600">{inProgressTasks + pendingTasks + submittedTasks}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        <span className="text-muted-foreground">Başarı Oranı:</span>
+                        <span className="font-semibold">{successRate}%</span>
+                    </div>
+                    {overdueTasks > 0 && (
+                        <div className="flex items-center gap-2 text-red-600">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="font-semibold">{overdueTasks} gecikmiş</span>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <Separator />
+
             {/* Tasks List */}
-            {tasks.length === 0 ? (
+            {filteredTasks.length === 0 ? (
                 <div className="text-center py-12 border rounded-lg bg-muted/50">
                     <ClipboardList className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <p className="text-muted-foreground font-medium mb-1">
@@ -390,11 +657,17 @@ export default function Tasks() {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {tasks.map((task) => {
+                    {filteredTasks.map((task) => {
                         const statusInfo = getStatusInfo(task.status);
                         const StatusIcon = statusInfo.icon;
                         const dueDate = task.due_date ? new Date(task.due_date) : null;
                         const createdDate = new Date(task.created_at);
+                        
+                        // Katılımcı bilgisini bul
+                        const taskRelationship = relationships.find(r => r.id === task.coaching_relationship_id);
+                        const participantName = isProfessional && taskRelationship
+                            ? `${taskRelationship.participant_first_name || ''} ${taskRelationship.participant_last_name || ''}`.trim() || taskRelationship.participant_email || 'Bilinmeyen'
+                            : null;
 
                         return (
                             <div
@@ -404,16 +677,52 @@ export default function Tasks() {
                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                     <div className="flex-1 space-y-3 min-w-0">
                                         <div className="flex items-start gap-3">
-                                            <div className="rounded-lg bg-primary/10 p-2 flex-shrink-0">
+                                            <div className="rounded-lg bg-primary/10 p-2 shrink-0">
                                                 <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                                                    <h3 className="font-semibold text-base sm:text-lg truncate">{task.title}</h3>
-                                                    <span className={`px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 ${statusInfo.color}`}>
-                                                        <StatusIcon className="h-3 w-3" />
-                                                        {statusInfo.label}
-                                                    </span>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-semibold text-base sm:text-lg truncate">{task.title}</h3>
+                                                        {isProfessional && participantName && (
+                                                            <p className="text-xs text-muted-foreground mt-1">
+                                                                Katılımcı: <span className="font-medium">{participantName}</span>
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    {isProfessional ? (
+                                                        (task.status === 'completed' || task.status === 'cancelled') ? (
+                                                            <span className={`px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 ${statusInfo.color} opacity-75`}>
+                                                                <StatusIcon className="h-3 w-3" />
+                                                                {statusInfo.label}
+                                                            </span>
+                                                        ) : (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <button className={`px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 ${statusInfo.color} hover:opacity-80 transition-opacity`}>
+                                                                        <StatusIcon className="h-3 w-3" />
+                                                                        {statusInfo.label}
+                                                                        <ChevronDown className="h-3 w-3" />
+                                                                    </button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    {getStatusOptions(task.status).map((statusOption) => (
+                                                                        <DropdownMenuItem
+                                                                            key={statusOption.value}
+                                                                            onClick={() => handleUpdateTaskStatus(task.id, statusOption.value)}
+                                                                        >
+                                                                            {statusOption.label}
+                                                                        </DropdownMenuItem>
+                                                                    ))}
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        )
+                                                    ) : (
+                                                        <span className={`px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 ${statusInfo.color}`}>
+                                                            <StatusIcon className="h-3 w-3" />
+                                                            {statusInfo.label}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {task.description && (
                                                     <p className="text-sm text-muted-foreground mb-2">
@@ -435,7 +744,7 @@ export default function Tasks() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
+                                    <div className="flex gap-2 shrink-0 w-full sm:w-auto">
                                         {isProfessional ? (
                                             <>
                                                 <Button
@@ -556,6 +865,41 @@ export default function Tasks() {
                             </div>
                         </form>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Onay Dialogu - Completed/Cancelled için */}
+            <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {pendingStatusUpdate?.newStatus === 'completed' 
+                                ? 'Görevi Tamamlandı Olarak İşaretle'
+                                : 'Görevi İptal Et'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {pendingStatusUpdate?.newStatus === 'completed' 
+                                ? 'Bu görevi tamamlandı olarak işaretlemek istediğinize emin misiniz? Tamamlanan görevlerin durumu daha sonra değiştirilemez.'
+                                : 'Bu görevi iptal etmek istediğinize emin misiniz? İptal edilen görevlerin durumu daha sonra değiştirilemez.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => {
+                                setIsConfirmDialogOpen(false);
+                                setPendingStatusUpdate(null);
+                            }}
+                        >
+                            İptal
+                        </Button>
+                        <Button 
+                            variant={pendingStatusUpdate?.newStatus === 'cancelled' ? 'destructive' : 'default'}
+                            onClick={handleConfirmStatusUpdate}
+                        >
+                            {pendingStatusUpdate?.newStatus === 'completed' ? 'Tamamlandı Olarak İşaretle' : 'İptal Et'}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

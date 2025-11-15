@@ -286,7 +286,7 @@ export default function Coaching() {
                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                     <div className="flex-1 space-y-3 min-w-0">
                                         <div className="flex items-start gap-3">
-                                            <div className="rounded-lg bg-primary/10 p-2 flex-shrink-0">
+                                            <div className="rounded-lg bg-primary/10 p-2 shrink-0">
                                                 <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                                             </div>
                                             <div className="flex-1 min-w-0">

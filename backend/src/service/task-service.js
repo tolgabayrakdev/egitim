@@ -174,6 +174,13 @@ export default class TaskService {
                 throw new HttpException(404, "Görev bulunamadı");
             }
 
+            const task = existingTask.rows[0];
+
+            // Tamamlanmış veya iptal edilmiş görevlerin status'u değiştirilemez
+            if (taskData.status !== undefined && (task.status === 'completed' || task.status === 'cancelled')) {
+                throw new HttpException(400, "Tamamlanmış veya iptal edilmiş görevlerin durumu değiştirilemez");
+            }
+
             // Güncelleme (sadece professional tüm alanları, participant sadece status'u güncelleyebilir)
             const updateFields = [];
             const values = [];
