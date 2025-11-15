@@ -107,5 +107,78 @@ export default class CoachingController {
             next(error);
         }
     }
+
+    async getCoachingDetailedReport(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const userRole = req.user.role;
+            const { relationshipId } = req.params;
+
+            const result = await this.coachingService.getCoachingDetailedReport(
+                userId,
+                userRole,
+                relationshipId
+            );
+
+            res.status(200).json({
+                success: true,
+                report: result
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getParticipantBySlug(req, res, next) {
+        try {
+            const professionalId = req.user.id;
+            const { slug } = req.params;
+
+            if (req.user.role !== 'professional') {
+                return res.status(403).json({
+                    success: false,
+                    message: "Sadece profesyonel kullanıcılar bu bilgilere erişebilir"
+                });
+            }
+
+            const result = await this.coachingService.getParticipantBySlug(professionalId, slug);
+
+            res.status(200).json({
+                success: true,
+                data: result
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getParticipantAnalytics(req, res, next) {
+        try {
+            const professionalId = req.user.id;
+            const { participantId } = req.params;
+            const { start_date, end_date } = req.query;
+
+            if (req.user.role !== 'professional') {
+                return res.status(403).json({
+                    success: false,
+                    message: "Sadece profesyonel kullanıcılar bu bilgilere erişebilir"
+                });
+            }
+
+            const result = await this.coachingService.getParticipantAnalytics(
+                professionalId,
+                participantId,
+                start_date || null,
+                end_date || null
+            );
+
+            res.status(200).json({
+                success: true,
+                analytics: result
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 

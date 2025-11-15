@@ -9,6 +9,7 @@ import invitationRoutes from "./routes/invitation-routes.js";
 import subscriptionRoutes from "./routes/subscription-routes.js";
 import packageRoutes from "./routes/package-routes.js";
 import coachingRoutes from "./routes/coaching-routes.js";
+import coachingNotesRoutes from "./routes/coaching-notes-routes.js";
 import taskRoutes from "./routes/task-routes.js";
 import activityLogRoutes from "./routes/activity-log-routes.js";
 
@@ -44,6 +45,7 @@ app.use("/api/invitations", invitationRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/packages", packageRoutes);
 app.use("/api/coaching", coachingRoutes);
+app.use("/api/coaching-notes", coachingNotesRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/activity-logs", activityLogRoutes);
 

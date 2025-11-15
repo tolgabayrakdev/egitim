@@ -11,11 +11,22 @@ router.post("/", verifyToken, coachingController.createCoachingRelationship.bind
 // Koçluk ilişkileri listesi (hem profesyonel hem participant)
 router.get("/", verifyToken, coachingController.getCoachingRelationships.bind(coachingController));
 
+// Spesifik route'lar - genel route'lardan önce tanımlanmalı
+// Katılımcı detayı (slug ile)
+router.get("/participant/:slug", verifyToken, coachingController.getParticipantBySlug.bind(coachingController));
+
+// Katılımcı analitikleri
+router.get("/participant/:participantId/analytics", verifyToken, coachingController.getParticipantAnalytics.bind(coachingController));
+
+// Genel route'lar - en sonda
 // Koçluk ilişkisi detayı
 router.get("/:relationshipId", verifyToken, coachingController.getCoachingRelationshipById.bind(coachingController));
 
 // Koçluk ilişkisi durumu güncelleme
 router.patch("/:relationshipId/status", verifyToken, coachingController.updateCoachingRelationshipStatus.bind(coachingController));
+
+// Koçluk detaylı rapor
+router.get("/:relationshipId/report", verifyToken, coachingController.getCoachingDetailedReport.bind(coachingController));
 
 export default router;
 

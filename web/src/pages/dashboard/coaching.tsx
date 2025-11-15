@@ -6,7 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { apiUrl } from "@/lib/api";
 import { toast } from "sonner";
-import { Users, Plus, CheckCircle2, XCircle, Calendar, Package } from "lucide-react";
+import { Users, Plus, CheckCircle2, XCircle, Calendar, Package, User } from "lucide-react";
+import { Link } from "react-router";
 
 interface CoachingRelationship {
     id: string;
@@ -188,8 +189,8 @@ export default function Coaching() {
         <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-2">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Koçluk İlişkileri</h1>
+                <div className="space-y-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Koçluk İlişkileri</h1>
                     <p className="text-muted-foreground">
                         {isProfessional 
                             ? "Katılımcılarınızla olan koçluk ilişkilerinizi görüntüleyin ve yönetin"
@@ -291,11 +292,19 @@ export default function Coaching() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                                                    <h3 className="font-semibold text-base sm:text-lg truncate">
-                                                        {isProfessional
-                                                            ? `${relationship.participant_first_name || ''} ${relationship.participant_last_name || ''}`.trim() || relationship.participant_email
-                                                            : `${relationship.professional_first_name || ''} ${relationship.professional_last_name || ''}`.trim() || relationship.professional_email}
-                                                    </h3>
+                                                    {isProfessional ? (
+                                                        <Link 
+                                                            to={`/dashboard/coaching/${(relationship.participant_first_name || '').toLowerCase()}-${(relationship.participant_last_name || '').toLowerCase()}`}
+                                                            className="font-semibold text-base sm:text-lg truncate hover:underline flex items-center gap-2"
+                                                        >
+                                                            <User className="h-4 w-4" />
+                                                            {`${relationship.participant_first_name || ''} ${relationship.participant_last_name || ''}`.trim() || relationship.participant_email}
+                                                        </Link>
+                                                    ) : (
+                                                        <h3 className="font-semibold text-base sm:text-lg truncate">
+                                                            {`${relationship.professional_first_name || ''} ${relationship.professional_last_name || ''}`.trim() || relationship.professional_email}
+                                                        </h3>
+                                                    )}
                                                     <span className={`px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 ${statusInfo.color}`}>
                                                         <StatusIcon className="h-3 w-3" />
                                                         {statusInfo.label}
@@ -314,14 +323,31 @@ export default function Coaching() {
                                             </div>
                                         </div>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => window.location.href = `/dashboard/tasks?relationship=${relationship.id}`}
-                                        className="w-full sm:w-auto"
-                                    >
-                                        Görevleri Görüntüle
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        {isProfessional && (
+                                            <Button
+                                                asChild
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full sm:w-auto"
+                                            >
+                                                <Link to={`/dashboard/coaching/${(relationship.participant_first_name || '').toLowerCase()}-${(relationship.participant_last_name || '').toLowerCase()}`}>
+                                                    <User className="mr-2 h-4 w-4" />
+                                                    Detaylar
+                                                </Link>
+                                            </Button>
+                                        )}
+                                        <Button
+                                            asChild
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-full sm:w-auto"
+                                        >
+                                            <Link to={`/dashboard/tasks?relationship=${relationship.id}`}>
+                                                Görevleri Görüntüle
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         );

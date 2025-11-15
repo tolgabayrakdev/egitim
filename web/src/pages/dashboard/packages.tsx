@@ -47,7 +47,7 @@ export default function Packages() {
 
             const data = await response.json();
             setPackages(data.packages || []);
-        } catch (error) {
+        } catch {
             toast.error("Paketler yüklenirken bir hata oluştu");
         } finally {
             setLoading(false);
@@ -86,7 +86,13 @@ export default function Packages() {
         setSubmitting(true);
 
         try {
-            const payload: any = {
+            const payload: {
+                title: string;
+                description: string | null;
+                status: "active" | "inactive";
+                duration_days?: number;
+                price?: number;
+            } = {
                 title: formData.title,
                 description: formData.description || null,
                 status: formData.status

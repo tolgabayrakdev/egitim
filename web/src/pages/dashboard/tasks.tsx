@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { apiUrl } from "@/lib/api";
 import { toast } from "sonner";
-import { Plus, Trash2, CheckCircle2, Clock, Send, MessageSquare, FileText, ClipboardList, ChevronDown, TrendingUp, AlertCircle, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, Clock, Send, MessageSquare, FileText, ClipboardList, ChevronDown, TrendingUp, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSearchParams, Link } from "react-router";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -72,6 +72,9 @@ export default function Tasks() {
     });
     const [submitting, setSubmitting] = useState(false);
     const [userRole, setUserRole] = useState<string>("");
+    const [showCompletedTasks, setShowCompletedTasks] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -139,6 +142,16 @@ export default function Tasks() {
             fetchTasks();
         }
     }, [userRole, fetchTasks, fetchRelationships]);
+
+    // Sayfa değiştiğinde scroll to top
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentPage]);
+
+    // Filtre değiştiğinde ilk sayfaya dön
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [showCompletedTasks, selectedParticipantId, relationshipId]);
 
     const handleCreateTask = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -397,7 +410,7 @@ export default function Tasks() {
 
     // URL'de relationship varsa, o ilişkiye ait görevleri göster
     // Yoksa ve professional ise, seçilen katılımcıya göre filtrele
-    const filteredTasks = relationshipId 
+    let filteredTasks = relationshipId 
         ? tasks // URL'de relationship varsa tüm görevler zaten o ilişkiye ait
         : (isProfessional && selectedParticipantId && relationships.length > 0
             ? tasks.filter((task) => {
@@ -406,18 +419,43 @@ export default function Tasks() {
             })
             : tasks);
 
-    // İstatistikleri hesapla
-    const totalTasks = filteredTasks.length;
-    const completedTasks = filteredTasks.filter(t => t.status === 'completed').length;
+    // Geçmiş görevleri (completed, cancelled) varsayılan olarak gizle
+    if (!showCompletedTasks) {
+        filteredTasks = filteredTasks.filter(task => 
+            task.status !== 'completed' && task.status !== 'cancelled'
+        );
+    }
+
+    // Pagination hesaplamaları
+    const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedTasks = filteredTasks.slice(startIndex, endIndex);
+
+    // İstatistikleri hesapla (tüm görevler üzerinden - toggle için)
+    const allTasksForStats = relationshipId 
+        ? tasks
+        : (isProfessional && selectedParticipantId && relationships.length > 0
+            ? tasks.filter((task) => {
+                const taskRelationship = relationships.find(r => r.id === task.coaching_relationship_id);
+                return taskRelationship?.participant_id === selectedParticipantId;
+            })
+            : tasks);
+
+    // Toplam her zaman tüm görevlerin sayısı olmalı
+    const totalTasks = allTasksForStats.length;
+    const completedTasks = allTasksForStats.filter(t => t.status === 'completed').length;
+    const cancelledTasks = allTasksForStats.filter(t => t.status === 'cancelled').length;
+    
+    // Aktif görevler (filtrelenmiş listede gösterilen)
     const pendingTasks = filteredTasks.filter(t => t.status === 'pending').length;
     const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress').length;
     const submittedTasks = filteredTasks.filter(t => t.status === 'submitted').length;
     const overdueTasks = filteredTasks.filter(t => t.status === 'overdue').length;
-    const cancelledTasks = filteredTasks.filter(t => t.status === 'cancelled').length;
     
     // Başarı oranı (tamamlanan / toplam aktif görevler)
-    const activeTasks = totalTasks - cancelledTasks;
-    const successRate = activeTasks > 0 ? Math.round((completedTasks / activeTasks) * 100) : 0;
+    const activeTasksCount = allTasksForStats.filter(t => t.status !== 'cancelled').length;
+    const successRate = activeTasksCount > 0 ? Math.round((completedTasks / activeTasksCount) * 100) : 0;
 
     // Relationship bilgisini al (URL'de varsa)
     const currentRelationship = relationshipId 
@@ -607,6 +645,28 @@ export default function Tasks() {
                 </div>
             )}
 
+            {/* Geçmiş Görevler Toggle */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        id="show-completed"
+                        checked={showCompletedTasks}
+                        onChange={(e) => setShowCompletedTasks(e.target.checked)}
+                        className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="show-completed" className="cursor-pointer text-sm font-medium">
+                        Geçmiş Görevleri Göster
+                    </Label>
+                </div>
+                {showCompletedTasks && (completedTasks + cancelledTasks > 0) && (
+                    <span className="text-xs text-muted-foreground">
+                        {completedTasks + cancelledTasks} geçmiş görev
+                    </span>
+                )}
+            </div>
+
+            <Separator />
 
             {/* İstatistikler */}
             {totalTasks > 0 && (
@@ -656,8 +716,9 @@ export default function Tasks() {
                     </p>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {filteredTasks.map((task) => {
+                <>
+                    <div className="space-y-4">
+                        {paginatedTasks.map((task) => {
                         const statusInfo = getStatusInfo(task.status);
                         const StatusIcon = statusInfo.icon;
                         const dueDate = task.due_date ? new Date(task.due_date) : null;
@@ -669,23 +730,45 @@ export default function Tasks() {
                             ? `${taskRelationship.participant_first_name || ''} ${taskRelationship.participant_last_name || ''}`.trim() || taskRelationship.participant_email || 'Bilinmeyen'
                             : null;
 
+                        const isCompletedOrCancelled = task.status === 'completed' || task.status === 'cancelled';
+
                         return (
                             <div
                                 key={task.id}
-                                className="p-4 sm:p-6 border rounded-lg hover:bg-muted/50 transition-colors space-y-4"
+                                className={`p-4 sm:p-6 border rounded-lg transition-all space-y-4 ${
+                                    isCompletedOrCancelled 
+                                        ? 'opacity-60 hover:opacity-70 bg-muted/30' 
+                                        : 'hover:bg-muted/50'
+                                }`}
                             >
                                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                     <div className="flex-1 space-y-3 min-w-0">
                                         <div className="flex items-start gap-3">
-                                            <div className="rounded-lg bg-primary/10 p-2 shrink-0">
-                                                <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                                            <div className={`rounded-lg p-2 shrink-0 ${
+                                                isCompletedOrCancelled 
+                                                    ? 'bg-muted/50' 
+                                                    : 'bg-primary/10'
+                                            }`}>
+                                                <ClipboardList className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                                                    isCompletedOrCancelled 
+                                                        ? 'text-muted-foreground' 
+                                                        : 'text-primary'
+                                                }`} />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                                                     <div className="flex-1 min-w-0">
-                                                        <h3 className="font-semibold text-base sm:text-lg truncate">{task.title}</h3>
+                                                        <h3 className={`font-semibold text-base sm:text-lg truncate ${
+                                                            isCompletedOrCancelled 
+                                                                ? 'line-through text-muted-foreground' 
+                                                                : ''
+                                                        }`}>{task.title}</h3>
                                                         {isProfessional && participantName && (
-                                                            <p className="text-xs text-muted-foreground mt-1">
+                                                            <p className={`text-xs mt-1 ${
+                                                                isCompletedOrCancelled 
+                                                                    ? 'text-muted-foreground/60' 
+                                                                    : 'text-muted-foreground'
+                                                            }`}>
                                                                 Katılımcı: <span className="font-medium">{participantName}</span>
                                                             </p>
                                                         )}
@@ -725,11 +808,19 @@ export default function Tasks() {
                                                     )}
                                                 </div>
                                                 {task.description && (
-                                                    <p className="text-sm text-muted-foreground mb-2">
+                                                    <p className={`text-sm mb-2 ${
+                                                        isCompletedOrCancelled 
+                                                            ? 'line-through text-muted-foreground/70' 
+                                                            : 'text-muted-foreground'
+                                                    }`}>
                                                         {task.description}
                                                     </p>
                                                 )}
-                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs text-muted-foreground">
+                                                <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs ${
+                                                    isCompletedOrCancelled 
+                                                        ? 'text-muted-foreground/60' 
+                                                        : 'text-muted-foreground'
+                                                }`}>
                                                     <span>Oluşturulma: {createdDate.toLocaleDateString("tr-TR")}</span>
                                                     {dueDate && (
                                                         <span className="truncate">Son Tarih: {dueDate.toLocaleDateString("tr-TR")} {dueDate.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span>
@@ -751,7 +842,9 @@ export default function Tasks() {
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => handleViewSubmissions(task.id)}
-                                                    className="flex-1 sm:flex-initial"
+                                                    className={`flex-1 sm:flex-initial ${
+                                                        isCompletedOrCancelled ? 'opacity-60' : ''
+                                                    }`}
                                                 >
                                                     <FileText className="h-4 w-4 sm:mr-0" />
                                                     <span className="sm:hidden ml-1">Görüntüle</span>
@@ -760,7 +853,9 @@ export default function Tasks() {
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => handleDeleteTask(task.id)}
-                                                    className="text-destructive hover:text-destructive flex-1 sm:flex-initial"
+                                                    className={`text-destructive hover:text-destructive flex-1 sm:flex-initial ${
+                                                        isCompletedOrCancelled ? 'opacity-60' : ''
+                                                    }`}
                                                 >
                                                     <Trash2 className="h-4 w-4 sm:mr-0" />
                                                     <span className="sm:hidden ml-1">Sil</span>
@@ -786,8 +881,68 @@ export default function Tasks() {
                                 </div>
                             </div>
                         );
-                    })}
-                </div>
+                        })}
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6">
+                            <div className="text-sm text-muted-foreground">
+                                {startIndex + 1}-{Math.min(endIndex, filteredTasks.length)} / {filteredTasks.length} görev gösteriliyor
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="gap-2"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Önceki</span>
+                                </Button>
+                                
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum;
+                                        if (totalPages <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage >= totalPages - 2) {
+                                            pageNum = totalPages - 4 + i;
+                                        } else {
+                                            pageNum = currentPage - 2 + i;
+                                        }
+                                        
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={currentPage === pageNum ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className="min-w-10"
+                                            >
+                                                {pageNum}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="gap-2"
+                                >
+                                    <span className="hidden sm:inline">Sonraki</span>
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
             {/* Submission Dialog */}

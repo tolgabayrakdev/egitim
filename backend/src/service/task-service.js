@@ -109,6 +109,36 @@ export default class TaskService {
         query += ` ORDER BY t.created_at DESC`;
 
         const result = await pool.query(query, params);
+        
+        // Overdue kontrolü ve güncelleme
+        const now = new Date();
+        const overdueTasks = [];
+        
+        for (const task of result.rows) {
+            // Due date geçmiş ve status pending veya in_progress ise overdue yap
+            if (task.due_date && 
+                new Date(task.due_date) < now && 
+                (task.status === 'pending' || task.status === 'in_progress')) {
+                
+                // Status'u overdue olarak güncelle
+                await pool.query(
+                    `UPDATE tasks 
+                     SET status = 'overdue', updated_at = NOW() 
+                     WHERE id = $1 AND status != 'overdue'`,
+                    [task.id]
+                );
+                
+                task.status = 'overdue';
+                overdueTasks.push(task.id);
+            }
+        }
+        
+        // Eğer overdue görevler güncellendiyse, tekrar çek
+        if (overdueTasks.length > 0) {
+            const updatedResult = await pool.query(query, params);
+            return updatedResult.rows;
+        }
+        
         return result.rows;
     }
 
@@ -148,7 +178,25 @@ export default class TaskService {
             throw new HttpException(404, "Görev bulunamadı");
         }
 
-        return result.rows[0];
+        const task = result.rows[0];
+        
+        // Overdue kontrolü
+        if (task.due_date && 
+            new Date(task.due_date) < new Date() && 
+            (task.status === 'pending' || task.status === 'in_progress')) {
+            
+            // Status'u overdue olarak güncelle
+            await pool.query(
+                `UPDATE tasks 
+                 SET status = 'overdue', updated_at = NOW() 
+                 WHERE id = $1 AND status != 'overdue'`,
+                [task.id]
+            );
+            
+            task.status = 'overdue';
+        }
+
+        return task;
     }
 
     async updateTask(taskId, userId, userRole, taskData) {
